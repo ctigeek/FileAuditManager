@@ -24,7 +24,7 @@ namespace FileAuditManager.Hashing
             this.deploymentRepository = deploymentRepository ?? new DeploymentRepository(connectionString);
             this.auditRepository = auditRepository ?? new AuditRepository(connectionString, this.deploymentRepository);
         }
-
+        //TODO: refactor this with async so that multiple paths can execute simultaneously using ParallelTaskRunnerExtension:  https://gist.github.com/ctigeek/2f67df6f1a3a68be3ceb
         public void HashAllActiveApplications()
         {
             var activeApplications = applicationRepository.GetAllApplicationsAsync().Result;
