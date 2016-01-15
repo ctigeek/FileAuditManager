@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.ServiceProcess;
+﻿using System.ServiceProcess;
 
 namespace FileAuditManager
 {
@@ -8,8 +7,7 @@ namespace FileAuditManager
         private readonly WebAppManager webAppManager;
         public ServiceManager()
         {
-            var serviceName = ConfigurationManager.AppSettings["ApplicationName"];
-            if (string.IsNullOrEmpty(serviceName)) throw new ConfigurationErrorsException("You must define an app setting called ApplicationName.");
+            var serviceName = System.Reflection.Assembly.GetExecutingAssembly().FullName;
             this.ServiceName = serviceName;
             webAppManager = new WebAppManager();
         }
