@@ -23,10 +23,18 @@ namespace FileAuditManager.Data
             collection = MongoDatabase.GetCollection<Application>(ApplicationCollection);
         }
 
-        public async Task<IList<Application>> GetAllApplicationsAsync()
+        public async Task<IList<Application>> GetAllApplicationsAsync(bool activeOnly = true)
         {
-            var list = await collection.AsQueryable().ToListAsync();
-            return list;
+            if (activeOnly)
+            {
+                var list = await collection.AsQueryable().Where(a => a.Enabled).ToListAsync();
+                return list;
+            }
+            else
+            {
+                var list = await collection.AsQueryable().ToListAsync();
+                return list;
+            }
         } 
 
         public async Task<Application> GetApplicationAsync(string name)
