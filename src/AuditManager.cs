@@ -21,8 +21,11 @@ namespace FileAuditManager
             this.hashingManager = hashingManager ?? new ApplicationHashingManager(null, null, null);
 
             var milliseconds = long.Parse(ConfigurationManager.AppSettings["AuditTimerInMilliseconds"]);
-            timer = new Timer(milliseconds);
-            timer.Elapsed += Timer_Elapsed;
+            if (milliseconds > 1000)
+            {
+                timer = new Timer(milliseconds);
+                timer.Elapsed += Timer_Elapsed;
+            }
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -43,22 +46,22 @@ namespace FileAuditManager
 
         public void Start()
         {
-            timer.Start();
+            timer?.Start();
         }
 
         public void Stop()
         {
-            timer.Stop();
+            timer?.Stop();
         }
 
         public void Pause()
         {
-            timer.Stop();
+            timer?.Stop();
         }
 
         public void Continue()
         {
-            timer.Start();
+            timer?.Start();
         }
     }
 }
