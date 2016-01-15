@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FileAuditManager.Data.Models;
@@ -34,7 +35,7 @@ namespace FileAuditManager.Data
             return list.FirstOrDefault();
         }
 
-        public async Task InsertOrUpdateApplicationAsync(Application application)
+        public async Task InsertApplicationAsync(Application application)
         {
             var existingRecord = await GetApplicationAsync(application.Name);
             if (existingRecord == null)
@@ -43,8 +44,14 @@ namespace FileAuditManager.Data
             }
             else
             {
-                await collection.ReplaceOneAsync(a => a.Name == application.Name, application);
+                throw new ArgumentException("The application named `" + application.Name + "` already exists.");
             }
         }
+
+        public async Task<long> EnableDisableApplication(string name, bool enabled)
+        {
+            var updateResult = await collection.UpdateOneAsync(a=>a.Name == name, Builders<Application>.Update.Set(a => a.Enabled, enabled));
+            return updateResult.ModifiedCount;
+        } 
     }
 }

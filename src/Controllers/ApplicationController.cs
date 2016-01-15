@@ -68,7 +68,7 @@ namespace FileAuditManager.Controllers
                     Name = name,
                     Enabled = true
                 };
-                await applicationRepository.InsertOrUpdateApplicationAsync(application);
+                await applicationRepository.InsertApplicationAsync(application);
                 return Ok();
             }
             catch (Exception ex)
@@ -78,20 +78,26 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Put(string name, [FromBody] Application application)
+        public async Task<IHttpActionResult> Put(string name, [FromBody] dynamic payload)
         {
             try
             {
-                if (application.Name != name)
+                if (payload == null || payload)
                 {
-                    return BadRequest("Application name in url does not match name in body.");
+                    return BadRequest("You must include boolean variable `Enabled` in the body.");
                 }
+                bool? enabled = payload.Enabled;
+                if (!enabled.HasValue)
+                {
+                    return BadRequest("You must include boolean variable `Enabled` in the body.");
+                }
+
                 var existingApplication = await applicationRepository.GetApplicationAsync(name);
                 if (existingApplication == null)
                 {
                     return NotFound();
                 }
-                await applicationRepository.InsertOrUpdateApplicationAsync(application);
+                await applicationRepository.EnableDisableApplication(name, enabled.Value);
                 return Ok();
             }
             catch (Exception ex)

@@ -8,6 +8,7 @@ namespace FileAuditManager.Data
     {
         Task<IList<Application>> GetAllApplicationsAsync();
         Task<Application> GetApplicationAsync(string name);
-        Task InsertOrUpdateApplicationAsync(Application application);
+        Task InsertApplicationAsync(Application application);
+        Task<long> EnableDisableApplication(string name, bool enabled);
     }
 }
