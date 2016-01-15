@@ -13,7 +13,6 @@ namespace FileAuditManager
         private static ILog Log = LogManager.GetLogger(typeof(AuditManager));
         private static readonly object LockObject = new object();
         private readonly Timer timer;
-        
         private readonly IApplicationHashingManager hashingManager;
 
         public AuditManager(IApplicationHashingManager hashingManager)
