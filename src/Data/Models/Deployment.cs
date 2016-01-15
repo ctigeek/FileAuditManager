@@ -6,7 +6,7 @@ namespace FileAuditManager.Data.Models
     public class Deployment
     {
         [BsonId]
-        public Guid? DeploymentId { get; set; }
+        public Guid DeploymentId { get; set; } = Guid.NewGuid();
 
         public string ApplicationName { get; set; }
 
@@ -16,29 +16,15 @@ namespace FileAuditManager.Data.Models
 
         public string Hash { get; set; }
 
-        public DateTime? StartDateTime { get; set; }
+        public DateTime StartDateTime { get; set; } = DateTime.UtcNow;
 
-        public DateTime? EndDateTime { get; set; }
+        public DateTime EndDateTime { get; set; } = DateTime.MaxValue;
+
+        public Guid? MostRecentAudit { get; set; } = Guid.Empty;
 
         public override string ToString()
         {
             return $"{DeploymentId}.{ApplicationName},{ServerName},{NetworkPath},{Hash},{StartDateTime},{EndDateTime}";
         }
-    }
-
-    public class DeploymentAudit
-    {
-        [BsonId]
-        public Guid DeploymentAuditId { get; set; } = Guid.NewGuid();
-
-        public Guid DeploymentId { get; set; }
-
-        public Guid DeploymentHashId { get; set; }
-
-        public DateTime AuditDateTime { get; set; }
-
-        public string Hash { get; set; }
-
-        public bool ValidHash { get; set; }
     }
 }

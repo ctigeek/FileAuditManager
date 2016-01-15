@@ -94,13 +94,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ApplicationController.cs" />
+    <Compile Include="Controllers\AuditController.cs" />
     <Compile Include="Controllers\DeploymentController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Data\ApplicationRepository.cs" />
+    <Compile Include="Data\AuditRepository.cs" />
     <Compile Include="Data\DeploymentAuditRepository.cs" />
     <Compile Include="Data\DeploymentRepository.cs" />
     <Compile Include="Data\IApplicationRepository.cs" />
+    <Compile Include="Data\IAuditRepository.cs" />
     <Compile Include="Data\IDeploymentRepository.cs" />
+    <Compile Include="Data\Models\DeploymentAudit.cs" />
     <Compile Include="Data\MongoRepositoryBase.cs" />
     <Compile Include="FileAuditManagerHttpControllerActivator.cs" />
     <Compile Include="Hashing\ApplicationHashingManager.cs" />

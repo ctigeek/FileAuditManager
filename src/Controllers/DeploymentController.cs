@@ -25,21 +25,21 @@ namespace FileAuditManager.Controllers
         {
             try
             {
-                var appTask = applicationRepository.GetApplicationAsync(name);
-                var depTask = includeInactive
+                var applicationTask = applicationRepository.GetApplicationAsync(name);
+                var activeDeploymentsTask = includeInactive
                     ? deploymentRepository.GetAllDeploymentsAsync(name)
                     : deploymentRepository.GetActiveDeploymentsAsync(name);
-                await Task.WhenAll(appTask, depTask);
+                await Task.WhenAll(applicationTask, activeDeploymentsTask);
                 
-                if (appTask.Result == null)
+                if (applicationTask.Result == null)
                 {
                     return BadRequest("Application " + name + " was not found.");
                 }
-                if (depTask.Result == null)
+                if (activeDeploymentsTask.Result == null)
                 {
                     return NotFound();
                 }
-                return Ok(BuildDeploymentResponse(depTask.Result, name));
+                return Ok(BuildDeploymentResponse(activeDeploymentsTask.Result, name));
             }
             catch (Exception ex)
             {
@@ -52,19 +52,19 @@ namespace FileAuditManager.Controllers
         {
             try
             {
-                var appTask = applicationRepository.GetApplicationAsync(name);
-                var depTask = deploymentRepository.GetDeploymentAsync(deploymentId);
-                await Task.WhenAll(appTask, depTask);
+                var applicationTask = applicationRepository.GetApplicationAsync(name);
+                var activeDeploymentsTask = deploymentRepository.GetDeploymentAsync(deploymentId);
+                await Task.WhenAll(applicationTask, activeDeploymentsTask);
 
-                if (appTask.Result == null)
+                if (applicationTask.Result == null)
                 {
                     return BadRequest("Application " + name + " was not found.");
                 }
-                if (depTask.Result == null)
+                if (activeDeploymentsTask.Result == null)
                 {
                     return NotFound();
                 }
-                return Ok(depTask.Result);
+                return Ok(activeDeploymentsTask.Result);
             }
             catch (Exception ex)
             {
@@ -73,34 +73,36 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Post(string name, [FromBody] Deployment deployment)
+        public async Task<IHttpActionResult> Post(string name, [FromBody] dynamic payload)
         {
             try
             {
-                if (deployment.DeploymentId != null ||
-                    !string.IsNullOrWhiteSpace(deployment.ApplicationName) ||
-                    deployment.StartDateTime != null ||
-                    deployment.EndDateTime != null)
+                if (payload == null)
                 {
-                    return BadRequest("The only fields you can include for a new deployment is `ServerName`, `NetworkPath`, and `Hash`.");
+                    return BadRequest("You must include the fields `ServerName`, `NetworkPath`, and `Hash` in the body.");
                 }
-                if (string.IsNullOrWhiteSpace(deployment.ServerName) || 
-                    string.IsNullOrWhiteSpace(deployment.NetworkPath) || 
-                    string.IsNullOrWhiteSpace(deployment.Hash))
+                string serverName = payload.ServerName;
+                string networkPath = payload.NetworkPath;
+                string hash = payload.Hash;
+
+                if (string.IsNullOrWhiteSpace(serverName) || 
+                    string.IsNullOrWhiteSpace(networkPath) || 
+                    string.IsNullOrWhiteSpace(hash))
                 {
-                    return BadRequest("You must include the fields `ServerName`, `NetworkPath`, and `Hash`.");
+                    return BadRequest("You must include the fields `ServerName`, `NetworkPath`, and `Hash` in the body.");
                 }
                 var application = await applicationRepository.GetApplicationAsync(name);
-
                 if (application == null)
                 {
-                    return BadRequest("Application " + name + " was not found.");
+                    await applicationRepository.InsertApplicationAsync(new Application {Name = name});
                 }
-
-                deployment.ApplicationName = name;
-                deployment.DeploymentId = Guid.NewGuid();
-                deployment.StartDateTime = DateTime.UtcNow;
-                deployment.EndDateTime = DateTime.MaxValue;
+                var deployment = new Deployment
+                {
+                    ApplicationName = name,
+                    ServerName = serverName,
+                    NetworkPath = networkPath,
+                    Hash = hash
+                };
                 await deploymentRepository.InsertDeploymentAsync(deployment);
                 return Ok();
             }
@@ -111,22 +113,11 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Delete(string name, Guid? deploymentId, [FromUri] bool all = false)
+        public async Task<IHttpActionResult> Delete(string name, Guid deploymentId)
         {
             try
             {
-                if (deploymentId.HasValue)
-                {
-                    await deploymentRepository.DeleteDeploymentAsync(deploymentId.Value);
-                }
-                if (all)
-                {
-                    var deployments = await deploymentRepository.GetAllDeploymentsAsync(name);
-                    foreach (var deployment in deployments)
-                    {
-                        await deploymentRepository.DeleteDeploymentAsync(deployment.DeploymentId.Value);
-                    }
-                }
+                await deploymentRepository.DeleteDeploymentAsync(deploymentId, DateTime.UtcNow);
                 return Ok();
             }
             catch (Exception ex)
@@ -141,7 +132,7 @@ namespace FileAuditManager.Controllers
             return new
             {
                 Application = applicationName,
-                DeploymentCount = deployments.Count,
+                Count = deployments.Count,
                 Deployments = deployments.OrderByDescending(d=>d.StartDateTime)
             };
         }

@@ -135,6 +135,15 @@ namespace FileAuditManager
                 });
 
             httpConfiguration.Routes.MapHttpRoute(
+                name: "Audit",
+                routeTemplate: "application/{name}/audit/{deploymentId}",
+                defaults: new
+                {
+                    deploymentId = RouteParameter.Optional,
+                    controller = "Audit"
+                });
+
+            httpConfiguration.Routes.MapHttpRoute(
                 name: "Health",
                 routeTemplate: "{controller}",
                 defaults: new

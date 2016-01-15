@@ -10,13 +10,14 @@ namespace FileAuditManager.Data
 {
     class DeploymentRepository : MongoRepositoryBase, IDeploymentRepository
     {
-        private const string DeploymentCollection = "Deployment";
+        private const string DeploymentCollection = "Deployment2"; //TODO: change this back
         private readonly IMongoCollection<Deployment> collection;
         public DeploymentRepository(string connectionString) : this(connectionString, null)
         {
         }
 
-        public DeploymentRepository(string connectionString, IMongoDatabase database) : base(connectionString, database)
+        public DeploymentRepository(string connectionString, IMongoDatabase database) 
+            : base(connectionString, database)
         {
             collection = MongoDatabase.GetCollection<Deployment>(DeploymentCollection);
         }
@@ -47,20 +48,26 @@ namespace FileAuditManager.Data
         {
             var taskList = new List<Task>();
             var existingActiveDeployments = await GetActiveDeploymentsAsync(deployment.ApplicationName);
+
             var matchingDeployment = existingActiveDeployments.FirstOrDefault(ead => ead.ServerName.Equals(deployment.ServerName, StringComparison.InvariantCultureIgnoreCase));
             if (matchingDeployment != null)
             {
-                matchingDeployment.EndDateTime = deployment.StartDateTime;
-                taskList.Add(collection.ReplaceOneAsync(d => d.DeploymentId == matchingDeployment.DeploymentId, matchingDeployment));
+                taskList.Add(DeleteDeploymentAsync(matchingDeployment.DeploymentId, deployment.StartDateTime));
             }
             taskList.Add(collection.InsertOneAsync(deployment));
             await Task.WhenAll(taskList);
         }
 
-        public async Task DeleteDeploymentAsync(Guid deploymentId)
+        public async Task<long> UpdateMostRecentAudit(Guid deploymentId, Guid mostRecentDeploymentAuditId)
         {
-            //TODO: change this to just change the end date.
-            await collection.DeleteOneAsync(d => d.DeploymentId == deploymentId);
+            var updateResult = await collection.UpdateOneAsync(d => d.DeploymentId == deploymentId, Builders<Deployment>.Update.Set(d => d.MostRecentAudit, mostRecentDeploymentAuditId));
+            return updateResult.ModifiedCount;
+        }
+
+        public async Task<long> DeleteDeploymentAsync(Guid deploymentId, DateTime endDateTime)
+        {
+            var updateResult = await collection.UpdateOneAsync(d => d.DeploymentId == deploymentId, Builders<Deployment>.Update.Set(d => d.EndDateTime, endDateTime));
+            return updateResult.ModifiedCount;
         }
     }
 }

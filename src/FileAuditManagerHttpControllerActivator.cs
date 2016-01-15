@@ -11,11 +11,11 @@ namespace FileAuditManager
     class FileAuditManagerHttpControllerActivator : IHttpControllerActivator
     {
         public const string ConnectionStringName = "fileaudit";
-        private static string connectionString { get; set; }
+        private static readonly string ConnectionString;
 
         static FileAuditManagerHttpControllerActivator()
         {
-            connectionString = ConfigurationManager.ConnectionStrings[ConnectionStringName].ConnectionString;
+            ConnectionString = ConfigurationManager.ConnectionStrings[ConnectionStringName].ConnectionString;
         }
 
         //http://blog.ploeh.dk/2012/09/28/DependencyInjectionandLifetimeManagementwithASP.NETWebAPI/
@@ -34,6 +34,14 @@ namespace FileAuditManager
                 var deploymentController = new DeploymentController(applicationRepository, deploymentRepository);
                 return deploymentController;
             }
+            if (controllerType == typeof (AuditController))
+            {
+                var applicationRepository = CreateApplicationRepository();
+                var deploymentRepository = CreateDeploymentRepository();
+                var auditRepository = CreateAuditRepository();
+                var auditController = new AuditController(applicationRepository, deploymentRepository, auditRepository);
+                return auditController;
+            }
             if (controllerType == typeof (HealthController))
             {
                 return new HealthController();
@@ -44,12 +52,17 @@ namespace FileAuditManager
 
         private IApplicationRepository CreateApplicationRepository()
         {
-            return new ApplicationRepository(connectionString);
+            return new ApplicationRepository(ConnectionString);
         }
 
         private IDeploymentRepository CreateDeploymentRepository()
         {
-            return new DeploymentRepository(connectionString);
+            return new DeploymentRepository(ConnectionString);
+        }
+
+        private IAuditRepository CreateAuditRepository()
+        {
+            return new AuditRepository(ConnectionString, CreateDeploymentRepository());
         }
     }
 }
