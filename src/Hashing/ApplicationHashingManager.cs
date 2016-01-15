@@ -22,7 +22,7 @@ namespace FileAuditManager.Hashing
             var connectionString = ConfigurationManager.ConnectionStrings[FileAuditManagerHttpControllerActivator.ConnectionStringName].ConnectionString;
             this.applicationRepository = applicationRepository ?? new ApplicationRepository(connectionString);
             this.deploymentRepository = deploymentRepository ?? new DeploymentRepository(connectionString);
-            this.auditRepository = auditRepository ?? new AuditRepository(connectionString, deploymentRepository);
+            this.auditRepository = auditRepository ?? new AuditRepository(connectionString, this.deploymentRepository);
         }
 
         public void HashAllActiveApplications()
