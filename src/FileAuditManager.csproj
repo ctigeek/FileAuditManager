@@ -116,7 +116,7 @@
     <Compile Include="Data\Models\DeploymentAudit.cs" />
     <Compile Include="Data\MongoRepositoryBase.cs" />
     <Compile Include="StructureMapRegistry.cs" />
-    <Compile Include="FileAuditManagerHttpControllerActivator.cs" />
+    <Compile Include="Controllers\FileAuditManagerHttpControllerActivator.cs" />
     <Compile Include="Hashing\ApplicationHashingManager.cs" />
     <Compile Include="Hashing\IApplicationHashingManager.cs" />
     <Compile Include="Logging\ApiRequestLogger.cs" />
