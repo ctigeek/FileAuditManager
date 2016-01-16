@@ -13,13 +13,8 @@ namespace FileAuditManager.Data
         private readonly IMongoCollection<DeploymentAudit> collection;
         private readonly IDeploymentRepository deploymentRepository;
 
-        public AuditRepository(string connectionString, IDeploymentRepository deploymentRepository) 
-            : this(connectionString, deploymentRepository, null)
-        {
-        }
-
-        public AuditRepository(string connectionString, IDeploymentRepository deploymentRepository, IMongoDatabase database) 
-            : base(connectionString, database)
+        public AuditRepository(MongoUrl mongoUrl, IMongoClient mongoClient, IDeploymentRepository deploymentRepository)
+            : base(mongoUrl, mongoClient)
         {
             this.deploymentRepository = deploymentRepository;
             collection = MongoDatabase.GetCollection<DeploymentAudit>(AuditCollection);

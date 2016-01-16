@@ -69,6 +69,14 @@
       <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="StructureMap, Version=4.0.1.318, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\structuremap.4.0.1.318\lib\net40\StructureMap.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="StructureMap.Net4, Version=4.0.1.318, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\structuremap.4.0.1.318\lib\net40\StructureMap.Net4.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -94,20 +102,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AuditManager.cs" />
+    <Compile Include="DIContainer.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AuditController.cs" />
     <Compile Include="Controllers\DeploymentController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Data\ApplicationRepository.cs" />
     <Compile Include="Data\AuditRepository.cs" />
-    <Compile Include="Data\DeploymentAuditRepository.cs" />
     <Compile Include="Data\DeploymentRepository.cs" />
     <Compile Include="Data\IApplicationRepository.cs" />
     <Compile Include="Data\IAuditRepository.cs" />
     <Compile Include="Data\IDeploymentRepository.cs" />
     <Compile Include="Data\Models\DeploymentAudit.cs" />
     <Compile Include="Data\MongoRepositoryBase.cs" />
-    <Compile Include="FileAuditManagerHttpControllerActivator.cs" />
+    <Compile Include="StructureMapRegistry.cs" />
+    <Compile Include="Controllers\FileAuditManagerHttpControllerActivator.cs" />
     <Compile Include="Hashing\ApplicationHashingManager.cs" />
     <Compile Include="Hashing\IApplicationHashingManager.cs" />
     <Compile Include="Logging\ApiRequestLogger.cs" />

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Dispatcher;
+using FileAuditManager.Controllers;
 using log4net;
 using Owin;
 using FileAuditManager.Logging;

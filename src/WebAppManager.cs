@@ -80,7 +80,7 @@ namespace FileAuditManager
 
         private void PreRunValidationTest()
         {
-            ValidateConnectionString(FileAuditManagerHttpControllerActivator.ConnectionStringName);
+            ValidateConnectionString(StructureMapRegistry.ConnectionStringName);
             ValidateApplicationSetting("uri");
             ValidateApplicationSetting("UseWindowsAuth");
         }
