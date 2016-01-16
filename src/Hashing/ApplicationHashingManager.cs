@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,10 +18,9 @@ namespace FileAuditManager.Hashing
 
         public ApplicationHashingManager(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IAuditRepository auditRepository)
         {
-            var connectionString = ConfigurationManager.ConnectionStrings[FileAuditManagerHttpControllerActivator.ConnectionStringName].ConnectionString;
-            this.applicationRepository = applicationRepository ?? new ApplicationRepository(connectionString);
-            this.deploymentRepository = deploymentRepository ?? new DeploymentRepository(connectionString);
-            this.auditRepository = auditRepository ?? new AuditRepository(connectionString, this.deploymentRepository);
+            this.applicationRepository = applicationRepository;
+            this.deploymentRepository = deploymentRepository;
+            this.auditRepository = auditRepository;
         }
         //TODO: refactor this with async so that multiple paths can execute simultaneously using ParallelTaskRunnerExtension:  https://gist.github.com/ctigeek/2f67df6f1a3a68be3ceb
         public void HashAllActiveApplications()

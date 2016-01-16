@@ -17,8 +17,7 @@ namespace FileAuditManager
 
         public AuditManager(IApplicationHashingManager hashingManager)
         {
-            //todo: DI this.
-            this.hashingManager = hashingManager ?? new ApplicationHashingManager(null, null, null);
+            this.hashingManager = hashingManager ?? DIContainer.Container.GetInstance<IApplicationHashingManager>();
 
             var milliseconds = long.Parse(ConfigurationManager.AppSettings["AuditTimerInMilliseconds"]);
             if (milliseconds > 1000)

@@ -16,7 +16,7 @@ namespace FileAuditManager.Data
         {
         }
 
-        public DeploymentRepository(string connectionString, IMongoDatabase database) 
+        private DeploymentRepository(string connectionString, IMongoDatabase database) 
             : base(connectionString, database)
         {
             collection = MongoDatabase.GetCollection<Deployment>(DeploymentCollection);

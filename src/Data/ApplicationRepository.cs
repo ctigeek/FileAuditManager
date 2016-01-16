@@ -17,7 +17,7 @@ namespace FileAuditManager.Data
         {
         }
 
-        public ApplicationRepository(string connectionString, IMongoDatabase database) 
+        private ApplicationRepository(string connectionString, IMongoDatabase database) 
             : base(connectionString, database)
         {
             collection = MongoDatabase.GetCollection<Application>(ApplicationCollection);

@@ -18,7 +18,7 @@ namespace FileAuditManager.Data
         {
         }
 
-        public AuditRepository(string connectionString, IDeploymentRepository deploymentRepository, IMongoDatabase database) 
+        private AuditRepository(string connectionString, IDeploymentRepository deploymentRepository, IMongoDatabase database) 
             : base(connectionString, database)
         {
             this.deploymentRepository = deploymentRepository;

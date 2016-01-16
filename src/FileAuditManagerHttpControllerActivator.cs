@@ -10,14 +10,6 @@ namespace FileAuditManager
 {
     class FileAuditManagerHttpControllerActivator : IHttpControllerActivator
     {
-        public const string ConnectionStringName = "fileaudit";
-        private static readonly string ConnectionString;
-
-        static FileAuditManagerHttpControllerActivator()
-        {
-            ConnectionString = ConfigurationManager.ConnectionStrings[ConnectionStringName].ConnectionString;
-        }
-
         //http://blog.ploeh.dk/2012/09/28/DependencyInjectionandLifetimeManagementwithASP.NETWebAPI/
         public IHttpController Create(HttpRequestMessage request, HttpControllerDescriptor controllerDescriptor, Type controllerType)
         {
@@ -52,17 +44,17 @@ namespace FileAuditManager
 
         private IApplicationRepository CreateApplicationRepository()
         {
-            return new ApplicationRepository(ConnectionString);
+            return DIContainer.Container.GetInstance<IApplicationRepository>();
         }
 
         private IDeploymentRepository CreateDeploymentRepository()
         {
-            return new DeploymentRepository(ConnectionString);
+            return DIContainer.Container.GetInstance<IDeploymentRepository>();
         }
 
         private IAuditRepository CreateAuditRepository()
         {
-            return new AuditRepository(ConnectionString, CreateDeploymentRepository());
+            return DIContainer.Container.GetInstance<IAuditRepository>();
         }
     }
 }
