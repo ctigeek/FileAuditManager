@@ -109,7 +109,6 @@
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Data\ApplicationRepository.cs" />
     <Compile Include="Data\AuditRepository.cs" />
-    <Compile Include="Data\DeploymentAuditRepository.cs" />
     <Compile Include="Data\DeploymentRepository.cs" />
     <Compile Include="Data\IApplicationRepository.cs" />
     <Compile Include="Data\IAuditRepository.cs" />

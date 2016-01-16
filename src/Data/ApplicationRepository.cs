@@ -13,12 +13,8 @@ namespace FileAuditManager.Data
         private const string ApplicationCollection = "Application";
         private readonly IMongoCollection<Application> collection;
 
-        public ApplicationRepository(string connectionString) : this(connectionString, null)
-        {
-        }
-
-        private ApplicationRepository(string connectionString, IMongoDatabase database) 
-            : base(connectionString, database)
+        public ApplicationRepository(MongoUrl mongoUrl, IMongoClient mongoClient)
+            : base(mongoUrl, mongoClient)
         {
             collection = MongoDatabase.GetCollection<Application>(ApplicationCollection);
         }

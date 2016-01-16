@@ -12,12 +12,9 @@ namespace FileAuditManager.Data
     {
         private const string DeploymentCollection = "Deployment2"; //TODO: change this back
         private readonly IMongoCollection<Deployment> collection;
-        public DeploymentRepository(string connectionString) : this(connectionString, null)
-        {
-        }
 
-        private DeploymentRepository(string connectionString, IMongoDatabase database) 
-            : base(connectionString, database)
+        public DeploymentRepository(MongoUrl mongoUrl, IMongoClient mongoClient)
+            : base(mongoUrl, mongoClient)
         {
             collection = MongoDatabase.GetCollection<Deployment>(DeploymentCollection);
         }
