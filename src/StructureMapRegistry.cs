@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using FileAuditManager.Controllers;
 using FileAuditManager.Data;
 using FileAuditManager.Hashing;
 using MongoDB.Driver;
@@ -14,11 +15,15 @@ namespace FileAuditManager
         public StructureMapRegistry()
         {
             this.ForSingletonOf<MongoUrl>().Use(MongoUrl);
-            this.ForSingletonOf<IMongoClient>().Use<MongoClient>(() => new MongoClient(MongoUrl));
+            this.ForSingletonOf<IMongoClient>().Use(() =>new MongoClient(MongoUrl));
             this.For<IApplicationRepository>().Use<ApplicationRepository>();
             this.For<IDeploymentRepository>().Use<DeploymentRepository>();
             this.For<IAuditRepository>().Use<AuditRepository>();
             this.For<IApplicationHashingManager>().Use<ApplicationHashingManager>();
+            this.ForConcreteType<ApplicationController>();
+            this.ForConcreteType<DeploymentController>();
+            this.ForConcreteType<AuditController>();
+            this.ForConcreteType<HealthController>();
         }
     }
 }
