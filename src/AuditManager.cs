@@ -20,7 +20,7 @@ namespace FileAuditManager
             this.hashingManager = hashingManager ?? DIContainer.Container.GetInstance<IApplicationHashingManager>();
 
             var milliseconds = long.Parse(ConfigurationManager.AppSettings["AuditTimerInMilliseconds"]);
-            if (milliseconds > 1000)
+            if (milliseconds > 19999)
             {
                 timer = new Timer(milliseconds);
                 timer.Elapsed += Timer_Elapsed;
@@ -33,7 +33,7 @@ namespace FileAuditManager
             {
                 try
                 {
-                    hashingManager.AuditHashAllActiveApplications();
+                    hashingManager.AuditHashAllActiveApplications().Wait();
                 }
                 catch (Exception ex)
                 {

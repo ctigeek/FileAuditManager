@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
@@ -37,7 +40,7 @@ namespace FileAuditManager.Hashing
             var activeDeployments = await deploymentRepository.GetActiveDeploymentsAsync(application.Name);
             foreach (var deployment in activeDeployments)
             {
-                var audit = await HashDeployment(deployment);
+                var audit = await HashDeployment(deployment, application.GetRegularExpressions());
                 await SaveAuditAsync(audit);
             }
         }
@@ -84,9 +87,9 @@ namespace FileAuditManager.Hashing
         //    }
         //}
 
-        public async Task<DeploymentAudit> HashDeployment(Deployment deployment)
+        public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions)
         {
-            var hash = await HashDirectory(deployment.NetworkPath);
+            var hash = await HashDirectory(deployment.NetworkPath, fileExclusionExpressions);
             return new DeploymentAudit
             {
                 DeploymentId = deployment.DeploymentId,
@@ -95,13 +98,16 @@ namespace FileAuditManager.Hashing
             };
         }
 
-        private async Task<string> HashDirectory(string path)
+        private async Task<string> HashDirectory(string path, IList<Regex> fileExclusionExpressions)
         {
             var hasher = SHA1Managed.Create();
             hasher.Initialize();
             foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
             {
-                await HashFile(hasher, file);
+                if (!fileExclusionExpressions.Any(f => f.IsMatch(file)))
+                {
+                    await HashFile(hasher, file);
+                }
             }
             hasher.TransformFinalBlock(new byte[0], 0, 0);
             var hashString = BytesToString(hasher.Hash);

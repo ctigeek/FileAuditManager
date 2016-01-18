@@ -87,17 +87,29 @@ namespace FileAuditManager.Controllers
                     return BadRequest("You must include boolean variable `Enabled` in the body.");
                 }
                 bool? enabled = payload.Enabled;
-                if (!enabled.HasValue)
-                {
-                    return BadRequest("You must include boolean variable `Enabled` in the body.");
-                }
+                IList<string> fileExclusionExpressions = payload.FileExclusionExpressions;
 
                 var existingApplication = await applicationRepository.GetApplicationAsync(name);
                 if (existingApplication == null)
                 {
                     return NotFound();
                 }
-                await applicationRepository.EnableDisableApplication(name, enabled.Value);
+
+                if (!enabled.HasValue && fileExclusionExpressions == null)
+                {
+                    return BadRequest("You must include either a boolean called `Enabled` or an array of string called `FileExclusionExpressions` in the body.");
+                }
+
+                if (enabled.HasValue)
+                {
+                    existingApplication.Enabled = enabled.Value;
+                }
+                if (fileExclusionExpressions != null)
+                {
+                    existingApplication.FileExclusionExpressions = fileExclusionExpressions;
+                }
+
+                await applicationRepository.UpdateApplication(existingApplication);
                 return Ok();
             }
             catch (Exception ex)

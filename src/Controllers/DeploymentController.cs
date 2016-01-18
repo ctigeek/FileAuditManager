@@ -112,7 +112,7 @@ namespace FileAuditManager.Controllers
                     NetworkPath = networkPath
                 };
 
-                var auditHash = await applicationHashingManager.HashDeployment(deployment);
+                var auditHash = await applicationHashingManager.HashDeployment(deployment, application.GetRegularExpressions());
                 deployment.Hash = auditHash.Hash;
 
                 await deploymentRepository.InsertDeploymentAsync(deployment);

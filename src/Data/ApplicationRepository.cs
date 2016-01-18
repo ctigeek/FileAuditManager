@@ -52,10 +52,9 @@ namespace FileAuditManager.Data
             }
         }
 
-        public async Task<long> EnableDisableApplication(string name, bool enabled)
+        public async Task UpdateApplication(Application application)
         {
-            var updateResult = await collection.UpdateOneAsync(a=>a.Name == name, Builders<Application>.Update.Set(a => a.Enabled, enabled));
-            return updateResult.ModifiedCount;
-        } 
+            await collection.ReplaceOneAsync(a => a.Name == application.Name, application);
+        }
     }
 }

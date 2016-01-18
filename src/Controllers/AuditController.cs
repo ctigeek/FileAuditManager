@@ -93,13 +93,24 @@ namespace FileAuditManager.Controllers
                 {
                     return BadRequest("You must include field `ServerName` in the body. Any other fields will be ignored.");
                 }
-                var activeDeployments = await deploymentRepository.GetActiveDeploymentsAsync(name);
+
+                var getAppTask = applicationRepository.GetApplicationAsync(name);
+                var getDeploymentTask = deploymentRepository.GetActiveDeploymentsAsync(name);
+                await Task.WhenAll(getAppTask, getDeploymentTask);
+                var application = getAppTask.Result;
+                var activeDeployments = getDeploymentTask.Result;
+
+                if (application == null)
+                {
+                    return BadRequest("Unknown application name: `" + name + "`.");
+                }
                 if (activeDeployments == null || activeDeployments.Count == 0 || activeDeployments.All(d => d.ServerName != serverName))
                 {
                     return BadRequest("No deployment found for application `" + name + "` with server `" + serverName + "`.");
                 }
+
                 var activeDeployment = activeDeployments.FirstOrDefault(d => d.ServerName == serverName);
-                var deploymentAudit = await applicationHashingManager.HashDeployment(activeDeployment);
+                var deploymentAudit = await applicationHashingManager.HashDeployment(activeDeployment, application.GetRegularExpressions());
                 await auditRepository.CreateAuditAsync(deploymentAudit);
                 return Ok();
             }

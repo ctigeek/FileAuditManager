@@ -1,4 +1,7 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace FileAuditManager.Data.Models
 {
@@ -8,5 +11,12 @@ namespace FileAuditManager.Data.Models
         public string Name { get; set; }
 
         public bool Enabled { get; set; }
+
+        public IList<string> FileExclusionExpressions { get; set; } = new List<string>();
+
+        public IList<Regex> GetRegularExpressions()
+        {
+            return FileExclusionExpressions.Select(f => new Regex(f)).ToList();
+        }
     }
 }
