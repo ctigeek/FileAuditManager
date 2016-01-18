@@ -10,7 +10,7 @@ namespace FileAuditManager.Data.Models
         [BsonId]
         public string Name { get; set; }
 
-        public bool Enabled { get; set; }
+        public bool? Enabled { get; set; }
 
         public IList<string> FileExclusionExpressions { get; set; } = new List<string>();
 

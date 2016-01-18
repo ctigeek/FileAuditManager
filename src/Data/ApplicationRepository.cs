@@ -23,7 +23,7 @@ namespace FileAuditManager.Data
         {
             if (activeOnly)
             {
-                var list = await collection.AsQueryable().Where(a => a.Enabled).ToListAsync();
+                var list = await collection.AsQueryable().Where(a=> a.Enabled.Value).ToListAsync();
                 return list;
             }
             else

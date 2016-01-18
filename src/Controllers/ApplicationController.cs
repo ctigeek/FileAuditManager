@@ -78,16 +78,14 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Put(string name, [FromBody] dynamic payload)
+        public async Task<IHttpActionResult> Put(string name, [FromBody] Application payload)
         {
             try
             {
-                if (payload == null || payload)
+                if (payload == null)
                 {
-                    return BadRequest("You must include boolean variable `Enabled` in the body.");
+                    return BadRequest("You must include either a boolean called `Enabled` or an array of string called `FileExclusionExpressions` in the body.");
                 }
-                bool? enabled = payload.Enabled;
-                IList<string> fileExclusionExpressions = payload.FileExclusionExpressions;
 
                 var existingApplication = await applicationRepository.GetApplicationAsync(name);
                 if (existingApplication == null)
@@ -95,18 +93,18 @@ namespace FileAuditManager.Controllers
                     return NotFound();
                 }
 
-                if (!enabled.HasValue && fileExclusionExpressions == null)
+                if (!payload.Enabled.HasValue && payload.FileExclusionExpressions == null)
                 {
                     return BadRequest("You must include either a boolean called `Enabled` or an array of string called `FileExclusionExpressions` in the body.");
                 }
 
-                if (enabled.HasValue)
+                if (payload.Enabled.HasValue)
                 {
-                    existingApplication.Enabled = enabled.Value;
+                    existingApplication.Enabled = payload.Enabled.Value;
                 }
-                if (fileExclusionExpressions != null)
+                if (payload.FileExclusionExpressions != null)
                 {
-                    existingApplication.FileExclusionExpressions = fileExclusionExpressions;
+                    existingApplication.FileExclusionExpressions = payload.FileExclusionExpressions;
                 }
 
                 await applicationRepository.UpdateApplication(existingApplication);
