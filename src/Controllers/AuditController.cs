@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
+using FileAuditManager.Hashing;
 using log4net;
 
 namespace FileAuditManager.Controllers
@@ -15,14 +16,17 @@ namespace FileAuditManager.Controllers
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IApplicationRepository applicationRepository;
         private readonly IAuditRepository auditRepository;
+        private readonly IApplicationHashingManager applicationHashingManager;
 
         public AuditController(IApplicationRepository applicationRepository, 
                                 IDeploymentRepository deploymentRepository,
-                                IAuditRepository auditRepository)
+                                IAuditRepository auditRepository,
+                                IApplicationHashingManager applicationHashingManager)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
             this.auditRepository = auditRepository;
+            this.applicationHashingManager = applicationHashingManager;
         }
 
         public async Task<IHttpActionResult> Get(string name)
@@ -82,26 +86,20 @@ namespace FileAuditManager.Controllers
             {
                 if (requestBody == null)
                 {
-                    return BadRequest("You must include fields `ServerName` and `Hash` in the body. Any other fields will be ignored.");
+                    return BadRequest("You must include the field `ServerName` in the body. Any other fields will be ignored.");
                 }
                 string serverName = requestBody.ServerName;
-                string hash = requestBody.Hash;
-                if (string.IsNullOrWhiteSpace(serverName) || string.IsNullOrWhiteSpace(hash))
+                if (string.IsNullOrWhiteSpace(serverName))
                 {
-                    return BadRequest("You must include fields `ServerName` and `Hash` in the body. Any other fields will be ignored.");
+                    return BadRequest("You must include field `ServerName` in the body. Any other fields will be ignored.");
                 }
                 var activeDeployments = await deploymentRepository.GetActiveDeploymentsAsync(name);
                 if (activeDeployments == null || activeDeployments.Count == 0 || activeDeployments.All(d => d.ServerName != serverName))
                 {
-                    return BadRequest("No deployment found for application `" + name + "` on server `" + serverName + "`.");
+                    return BadRequest("No deployment found for application `" + name + "` with server `" + serverName + "`.");
                 }
                 var activeDeployment = activeDeployments.FirstOrDefault(d => d.ServerName == serverName);
-                var deploymentAudit = new DeploymentAudit
-                {
-                    DeploymentId = activeDeployment.DeploymentId,
-                    Hash = hash,
-                    ValidHash = hash.Equals(activeDeployment.Hash, StringComparison.InvariantCultureIgnoreCase)
-                };
+                var deploymentAudit = await applicationHashingManager.HashDeployment(activeDeployment);
                 await auditRepository.CreateAuditAsync(deploymentAudit);
                 return Ok();
             }

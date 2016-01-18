@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
+using FileAuditManager.Hashing;
 using log4net;
 
 namespace FileAuditManager.Controllers
@@ -14,11 +16,14 @@ namespace FileAuditManager.Controllers
         private static readonly ILog Log = LogManager.GetLogger(typeof(ApplicationController));
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IApplicationRepository applicationRepository;
+        private readonly IApplicationHashingManager applicationHashingManager;
+        
 
-        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository)
+        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IApplicationHashingManager applicationHashingManager)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
+            this.applicationHashingManager = applicationHashingManager;
         }
 
         public async Task<IHttpActionResult> Get(string name, [FromUri] bool includeInactive = false)
@@ -83,26 +88,33 @@ namespace FileAuditManager.Controllers
                 }
                 string serverName = payload.ServerName;
                 string networkPath = payload.NetworkPath;
-                string hash = payload.Hash;
 
                 if (string.IsNullOrWhiteSpace(serverName) || 
-                    string.IsNullOrWhiteSpace(networkPath) || 
-                    string.IsNullOrWhiteSpace(hash))
+                    string.IsNullOrWhiteSpace(networkPath))
                 {
-                    return BadRequest("You must include the fields `ServerName`, `NetworkPath`, and `Hash` in the body.");
+                    return BadRequest("You must include the fields `ServerName` and `NetworkPath` in the body.");
                 }
                 var application = await applicationRepository.GetApplicationAsync(name);
                 if (application == null)
                 {
                     await applicationRepository.InsertApplicationAsync(new Application {Name = name});
                 }
+
+                if (!Directory.Exists(networkPath))
+                {
+                    return BadRequest("The path `" + networkPath + "` is invalid or inaccessible.");
+                }
+
                 var deployment = new Deployment
                 {
                     ApplicationName = name,
                     ServerName = serverName,
-                    NetworkPath = networkPath,
-                    Hash = hash
+                    NetworkPath = networkPath
                 };
+
+                var auditHash = await applicationHashingManager.HashDeployment(deployment);
+                deployment.Hash = auditHash.Hash;
+
                 await deploymentRepository.InsertDeploymentAsync(deployment);
                 return Ok();
             }
