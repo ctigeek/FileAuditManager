@@ -33,7 +33,7 @@ namespace FileAuditManager
             {
                 try
                 {
-                    hashingManager.HashAllActiveApplications();
+                    hashingManager.AuditHashAllActiveApplications();
                 }
                 catch (Exception ex)
                 {

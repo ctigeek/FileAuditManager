@@ -14,7 +14,7 @@ namespace FileAuditManager.Data.Models
 
         public string NetworkPath { get; set; }
 
-        public string Hash { get; set; }
+        public string Hash { get; set; } = string.Empty;
 
         public DateTime StartDateTime { get; set; } = DateTime.UtcNow;
 

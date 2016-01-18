@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
 using log4net;
@@ -22,72 +22,116 @@ namespace FileAuditManager.Hashing
             this.deploymentRepository = deploymentRepository;
             this.auditRepository = auditRepository;
         }
-        //TODO: refactor this with async so that multiple paths can execute simultaneously using ParallelTaskRunnerExtension:  https://gist.github.com/ctigeek/2f67df6f1a3a68be3ceb
-        public void HashAllActiveApplications()
+
+        public async Task AuditHashAllActiveApplications()
         {
             var activeApplications = applicationRepository.GetAllApplicationsAsync().Result;
             foreach (var application in activeApplications)
             {
-                var activeDeployments = deploymentRepository.GetActiveDeploymentsAsync(application.Name).Result;
-                foreach (var deployment in activeDeployments)
-                {
-                    HashDeployment(deployment);
-                    //pause for a few seconds so we aren't hammering every server simultanously.
-                    Thread.Sleep(5000);
-                }
+                await AuditHashApplication(application);
             }
         }
 
-        public void HashDeployment(Deployment deployment)
+        public async Task AuditHashApplication(Application application)
         {
-            ThreadPool.QueueUserWorkItem(HashDeploymentWorker, deployment);
-        }
-
-        private void HashDeploymentWorker(object deploymentObject)
-        {
-            var deployment = deploymentObject as Deployment;
-            try
+            var activeDeployments = await deploymentRepository.GetActiveDeploymentsAsync(application.Name);
+            foreach (var deployment in activeDeployments)
             {
-                var hashbytes = GetDirectoryHash(deployment.NetworkPath);
-                var hash = BytesToString(hashbytes);
-                SaveAudit(deployment, hash);
-            }
-            catch (Exception ex)
-            {
-                log.ErrorFormat("Error while trying to hash files for application `{0}` on server `{1}`: {2}", deployment.ApplicationName, deployment.ServerName, ex);
+                var audit = await HashDeployment(deployment);
+                await SaveAuditAsync(audit);
             }
         }
 
-        private void SaveAudit(Deployment deployment, string hash)
+        //public async Task AuditHashApplication(string name)
+        //{
+        //    var application = await applicationRepository.GetApplicationAsync(name);
+        //    if (application == null)
+        //    {
+        //        throw new ArgumentException("Application `" + name + "` does not exist.");
+        //    }
+        //    AuditHashApplication(application);
+        //}
+
+        //public void AuditHashApplication(Application application)
+        //{
+        //    var activeDeployments = deploymentRepository.GetActiveDeploymentsAsync(application.Name).Result;
+        //    var hashDeploymentTasks = GetTasksToHashDeployments(activeDeployments);
+        //    hashDeploymentTasks.RunTasks<DeploymentAudit>(3, task =>
+        //    {
+        //        if (task.IsFaulted)
+        //        {
+        //            log.Error("Error hashing deployment (Application==`" + application.Name + "`:", task.Exception);
+        //        }
+        //        else
+        //        {
+        //            try
+        //            {
+        //                SaveAuditAsync(task.Result).Wait();
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                log.Error("Error saving audit: (Application==`" + application.Name + "`:", task.Exception);
+        //            }
+        //        }
+        //    });
+        //}
+
+        //private IEnumerable<Task<DeploymentAudit>> GetTasksToHashDeployments(IList<Deployment> deployments)
+        //{
+        //    foreach (var deployment in deployments)
+        //    {
+        //        yield return HashDeployment(deployment);
+        //    }
+        //}
+
+        public async Task<DeploymentAudit> HashDeployment(Deployment deployment)
         {
-            var deploymentAudit = new DeploymentAudit
+            var hash = await HashDirectory(deployment.NetworkPath);
+            return new DeploymentAudit
             {
                 DeploymentId = deployment.DeploymentId,
                 Hash = hash,
                 ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase)
             };
-            auditRepository.CreateAuditAsync(deploymentAudit).Wait();
         }
 
-        private static byte[] GetDirectoryHash(string path)
+        private async Task<string> HashDirectory(string path)
         {
-            var fileHasher = SHA1Managed.Create();
-            var sumHasher = SHA1Managed.Create();
-            sumHasher.Initialize();
-
+            var hasher = SHA1Managed.Create();
+            hasher.Initialize();
             foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
             {
-                using (var str = File.OpenRead(file))
+                await HashFile(hasher, file);
+            }
+            hasher.TransformFinalBlock(new byte[0], 0, 0);
+            var hashString = BytesToString(hasher.Hash);
+            return hashString;
+        }
+
+        private async Task HashFile(SHA1 hasher, string path)
+        {
+            var buffer = new byte[1024]; //what is optimal here?
+            using (var fileStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                while (true)
                 {
-                    var hash = fileHasher.ComputeHash(str);
-                    sumHasher.TransformBlock(hash, 0, hash.Length, null, 0);
-                    //hash the name and path of the file...
-                    var filePath = Encoding.UTF8.GetBytes(file);
-                    sumHasher.TransformBlock(filePath, 0, filePath.Length, null, 0);
+                    var bytesread = await fileStream.ReadAsync(buffer, 0, 1024);
+                    if (bytesread == 0) break;
+                    hasher.TransformBlock(buffer, 0, bytesread, null, 0);
                 }
             }
-            sumHasher.TransformFinalBlock(new byte[0], 0, 0);
-            return sumHasher.Hash;
+            HashString(hasher, path);
+        }
+
+        private void HashString(SHA1 hasher, string hashThis)
+        {
+            var bytes = Encoding.UTF8.GetBytes(hashThis);
+            hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
+        }
+
+        private async Task SaveAuditAsync(DeploymentAudit deploymentAudit)
+        {
+            await auditRepository.CreateAuditAsync(deploymentAudit);
         }
 
         private static string BytesToString(byte[] array)

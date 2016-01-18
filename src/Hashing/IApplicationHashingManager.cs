@@ -1,10 +1,12 @@
+using System.Threading.Tasks;
 using FileAuditManager.Data.Models;
 
 namespace FileAuditManager.Hashing
 {
-    internal interface IApplicationHashingManager
+    public interface IApplicationHashingManager
     {
-        void HashAllActiveApplications();
-        void HashDeployment(Deployment deployment);
+        Task AuditHashAllActiveApplications();
+        Task AuditHashApplication(Application application);
+        Task<DeploymentAudit> HashDeployment(Deployment deployment);
     }
 }
