@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Web.Http.Results;
 using FileAuditManager.Controllers;
+using FileAuditManager.Controllers.Models;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
 using Moq;
@@ -61,9 +62,11 @@ namespace test.Controllers
                 .Callback((Application app) => { savedApplication = app; })
                 .Returns(Task.CompletedTask);
 
-            var payload = new Application {Enabled = false};
             
-            var result = await applicationController.Put(existingApplication.Name, payload);
+            var result = await applicationController.Put(existingApplication.Name, new ModifiedApplication
+            {
+                Enabled = false
+            });
             Assert.That(result, Is.TypeOf<OkResult>());
             Assert.That(savedApplication.Enabled, Is.False);
         }

@@ -2,10 +2,12 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Dispatcher;
+using System.Web.Http.Routing;
 using FileAuditManager.Controllers;
 using log4net;
 using Owin;
@@ -116,6 +118,7 @@ namespace FileAuditManager
             var httpConfiguration = new HttpConfiguration();
             httpConfiguration.Services.Replace(typeof(IHttpControllerActivator), new FileAuditManagerHttpControllerActivator());
 
+            //------------------------------------------  Application
             httpConfiguration.Routes.MapHttpRoute(
                 name: "Application",
                 routeTemplate: "application/{name}",
@@ -124,25 +127,65 @@ namespace FileAuditManager
                     name = RouteParameter.Optional,
                     controller = "Application"
                 });
-
+            //------------------------------------------  Deployment
             httpConfiguration.Routes.MapHttpRoute(
-                name: "Deployment",
-                routeTemplate: "application/{name}/deployment/{deploymentId}",
+                name: "DeploymentGet",
+                routeTemplate: "application/{name}/deployment/{serverName}",
                 defaults: new
                 {
-                    deploymentId = RouteParameter.Optional,
+                    serverName = RouteParameter.Optional,
                     controller = "Deployment"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Get)
+                });
+            httpConfiguration.Routes.MapHttpRoute(
+                name: "DeploymentPost",
+                routeTemplate: "application/{name}/deployment/{serverName}",
+                defaults: new
+                {
+                    controller = "Deployment"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
                 });
 
             httpConfiguration.Routes.MapHttpRoute(
-                name: "Audit",
+                name: "DeploymentDelete",
                 routeTemplate: "application/{name}/audit/{deploymentId}",
                 defaults: new
                 {
                     deploymentId = RouteParameter.Optional,
-                    controller = "Audit"
+                    controller = "Deployment"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Delete)
                 });
 
+            //-----------------------------------------Audit
+            httpConfiguration.Routes.MapHttpRoute(
+                name: "AuditPost",
+                routeTemplate: "application/{name}/audit/{serverName}",
+                defaults: new
+                {
+                    controller = "Audit"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
+                });
+            httpConfiguration.Routes.MapHttpRoute(
+                name: "Audit",
+                routeTemplate: "application/{name}/audit/{serverName}",
+                defaults: new
+                {
+                    serverName = RouteParameter.Optional,
+                    controller = "Audit"
+                });
+            // --------------------------------------- Health
             httpConfiguration.Routes.MapHttpRoute(
                 name: "Health",
                 routeTemplate: "{controller}",

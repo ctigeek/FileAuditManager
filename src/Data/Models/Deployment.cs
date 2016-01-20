@@ -20,7 +20,7 @@ namespace FileAuditManager.Data.Models
 
         public DateTime EndDateTime { get; set; } = DateTime.MaxValue;
 
-        public Guid? MostRecentAudit { get; set; } = Guid.Empty;
+        public Guid MostRecentAudit { get; set; } = Guid.Empty;
 
         public override string ToString()
         {

@@ -47,7 +47,7 @@ namespace FileAuditManager.Controllers
                     return NotFound();
                 }
 
-                var audits = await auditRepository.GetAuditsAsync(activeDeployments.Select(d => d.MostRecentAudit.Value).ToList());
+                var audits = await auditRepository.GetAuditsAsync(activeDeployments.Select(d => d.MostRecentAudit).ToList());
                 var response = BuildAuditResponseObject(name, activeDeployments, audits);
                 return Ok(response);
             }
@@ -58,19 +58,25 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Get(string name, Guid deploymentId)
+        public async Task<IHttpActionResult> Get(string name, string serverName)
         {
             try
             {
-                var deploymentTask = deploymentRepository.GetDeploymentAsync(deploymentId);
-                var auditsTask = auditRepository.GetAllAuditsAsync(new[] { deploymentId });
-                await Task.WhenAll(deploymentTask, auditsTask);
-
-                if (deploymentTask.Result == null)
+                var deployment = (await deploymentRepository.GetActiveDeploymentsAsync(name, serverName)).FirstOrDefault();
+                if (deployment == null)
+                {
+                    return BadRequest("No active deployment for application `" + name + "` on server `" + serverName + "`.");
+                }
+                if (deployment.MostRecentAudit == Guid.Empty)
                 {
                     return NotFound();
                 }
-                var audits = BuildAuditResponseObject(name, new[] {deploymentTask.Result}, auditsTask.Result);
+                var audit = (await auditRepository.GetAllAuditsAsync(new[] {deployment.DeploymentId})).FirstOrDefault();
+                if (audit == null)
+                {
+                    return NotFound();
+                }
+                var audits = BuildAuditResponseObject(name, new[] {deployment}, new[] {audit});
                 return Ok(audits);
             }
             catch (Exception ex)
@@ -80,20 +86,10 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Post(string name, [FromBody] dynamic requestBody)
+        public async Task<IHttpActionResult> Post(string name, string serverName)
         {
             try
             {
-                if (requestBody == null)
-                {
-                    return BadRequest("You must include the field `ServerName` in the body. Any other fields will be ignored.");
-                }
-                string serverName = requestBody.ServerName;
-                if (string.IsNullOrWhiteSpace(serverName))
-                {
-                    return BadRequest("You must include field `ServerName` in the body. Any other fields will be ignored.");
-                }
-
                 var getAppTask = applicationRepository.GetApplicationAsync(name);
                 var getDeploymentTask = deploymentRepository.GetActiveDeploymentsAsync(name);
                 await Task.WhenAll(getAppTask, getDeploymentTask);

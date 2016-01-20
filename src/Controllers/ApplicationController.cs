@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Http;
+using FileAuditManager.Controllers.Models;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
 using log4net;
@@ -78,7 +79,7 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Put(string name, [FromBody] Application payload)
+        public async Task<IHttpActionResult> Put(string name, [FromBody] ModifiedApplication payload)
         {
             try
             {

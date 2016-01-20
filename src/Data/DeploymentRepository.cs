@@ -19,20 +19,30 @@ namespace FileAuditManager.Data
             collection = MongoDatabase.GetCollection<Deployment>(DeploymentCollection);
         }
 
-        public async Task<IList<Deployment>> GetActiveDeploymentsAsync(string applicationName)
+        public async Task<IList<Deployment>> GetActiveDeploymentsAsync(string name, string serverName = null)
         {
-            var list = await collection.AsQueryable()
-                .Where(d => d.ApplicationName == applicationName && d.EndDateTime == DateTime.MaxValue)
+            if (string.IsNullOrWhiteSpace(serverName))
+            {
+                return await collection.AsQueryable()
+                    .Where(d => d.ApplicationName == name && d.EndDateTime == DateTime.MaxValue)
+                    .ToListAsync();
+            }
+            return await collection.AsQueryable()
+                .Where(d => d.ApplicationName == name && d.ServerName == serverName  && d.EndDateTime == DateTime.MaxValue)
                 .ToListAsync();
-            return list;
         }
 
-        public async Task<IList<Deployment>> GetAllDeploymentsAsync(string applicationName)
+        public async Task<IList<Deployment>> GetAllDeploymentsAsync(string name, string serverName = null)
         {
-            var list = await collection.AsQueryable()
-                .Where(d => d.ApplicationName == applicationName)
+            if (string.IsNullOrWhiteSpace(serverName))
+            {
+                return await collection.AsQueryable()
+                    .Where(d => d.ApplicationName == name)
+                    .ToListAsync();
+            }
+            return await collection.AsQueryable()
+                .Where(d => d.ApplicationName == name && d.ServerName == serverName)
                 .ToListAsync();
-            return list;
         }
 
         public async Task<Deployment> GetDeploymentAsync(Guid deploymentId)

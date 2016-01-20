@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
+using FileAuditManager.Controllers.Models;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
 using FileAuditManager.Hashing;
@@ -26,14 +27,14 @@ namespace FileAuditManager.Controllers
             this.applicationHashingManager = applicationHashingManager;
         }
 
-        public async Task<IHttpActionResult> Get(string name, [FromUri] bool includeInactive = false)
+        public async Task<IHttpActionResult> Get(string name, string serverName = null, [FromUri] bool includeInactive = false)
         {
             try
             {
                 var applicationTask = applicationRepository.GetApplicationAsync(name);
                 var activeDeploymentsTask = includeInactive
-                    ? deploymentRepository.GetAllDeploymentsAsync(name)
-                    : deploymentRepository.GetActiveDeploymentsAsync(name);
+                    ? deploymentRepository.GetAllDeploymentsAsync(name, serverName)
+                    : deploymentRepository.GetActiveDeploymentsAsync(name, serverName);
                 await Task.WhenAll(applicationTask, activeDeploymentsTask);
                 
                 if (applicationTask.Result == null)
@@ -53,7 +54,7 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Get(string name, Guid deploymentId)
+        public async Task<IHttpActionResult> Get(string name, [FromUri] Guid deploymentId)
         {
             try
             {
@@ -78,21 +79,13 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Post(string name, [FromBody] dynamic payload)
+        public async Task<IHttpActionResult> Post(string name, string serverName, [FromBody] NewDeployment payload)
         {
             try
             {
-                if (payload == null)
+                if (string.IsNullOrWhiteSpace(payload?.NetworkPath))
                 {
-                    return BadRequest("You must include the fields `ServerName`, `NetworkPath`, and `Hash` in the body.");
-                }
-                string serverName = payload.ServerName;
-                string networkPath = payload.NetworkPath;
-
-                if (string.IsNullOrWhiteSpace(serverName) || 
-                    string.IsNullOrWhiteSpace(networkPath))
-                {
-                    return BadRequest("You must include the fields `ServerName` and `NetworkPath` in the body.");
+                    return BadRequest("You must include the field `NetworkPath` in the body.");
                 }
                 var application = await applicationRepository.GetApplicationAsync(name);
                 if (application == null)
@@ -100,16 +93,16 @@ namespace FileAuditManager.Controllers
                     await applicationRepository.InsertApplicationAsync(new Application {Name = name});
                 }
 
-                if (!Directory.Exists(networkPath))
+                if (!Directory.Exists(payload.NetworkPath))
                 {
-                    return BadRequest("The path `" + networkPath + "` is invalid or inaccessible.");
+                    return BadRequest("The path `" + payload.NetworkPath + "` is invalid or inaccessible.");
                 }
 
                 var deployment = new Deployment
                 {
                     ApplicationName = name,
                     ServerName = serverName,
-                    NetworkPath = networkPath
+                    NetworkPath = payload.NetworkPath
                 };
 
                 var auditHash = await applicationHashingManager.HashDeployment(deployment, application.GetRegularExpressions());
@@ -125,7 +118,7 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Delete(string name, Guid deploymentId)
+        public async Task<IHttpActionResult> Delete(Guid deploymentId)
         {
             try
             {
