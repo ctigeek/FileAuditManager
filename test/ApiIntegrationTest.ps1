@@ -29,3 +29,8 @@ $response.Deployments
 $url = $baseUrl + "/Application/test/audit/local"
 $response = Invoke-RestMethod $url -Headers $headers -Method Post -ContentType "application/json" 
 
+############## Get the audit.
+$url = $baseUrl + "/Application/test/audit/local"
+$response = Invoke-RestMethod $url -Headers $headers
+$response
+

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Threading;
 using log4net;
 using Microsoft.Owin.Hosting;
@@ -13,11 +12,9 @@ namespace FileAuditManager
         public bool Running { get; private set; }
         private bool IsPaused { get; set; } = false;
         private IDisposable webApp;
-        private readonly string uri;
 
-        public WebAppManager(string uri = null)
+        public WebAppManager()
         {
-            this.uri = uri ?? ConfigurationManager.AppSettings["uri"];
             Running = false;
         }
 
@@ -27,9 +24,9 @@ namespace FileAuditManager
             {
                 if (Running) throw new InvalidOperationException("WebAppManager already running.");
                 PreRunValidationTest();
-                webApp = WebApp.Start<WebAppStartup>(uri);
+                webApp = WebApp.Start<WebAppStartup>(Configuration.ListenUrl);
                 Running = true;
-                Log.Debug("Listening on " + uri);
+                Log.Debug("Listening on " + Configuration.ListenUrl);
                 PostRunValidationTest();
                 ThreadPool.QueueUserWorkItem(PutServiceIntoRotationAfterTenSeconds);
             }
@@ -80,44 +77,13 @@ namespace FileAuditManager
 
         private void PreRunValidationTest()
         {
-            ValidateConnectionString(StructureMapRegistry.ConnectionStringName);
-            ValidateApplicationSetting("uri");
-            ValidateApplicationSetting("UseWindowsAuth");
-        }
-
-        private void ValidateConnectionString(string connectionStringName)
-        {
-            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionStringName];
-            if (connectionStringSettings == null)
-            {
-                throw new ConfigurationErrorsException("The connection string " + connectionStringName + " does not exist.");
-            }
-            if (string.IsNullOrWhiteSpace(connectionStringSettings.ConnectionString))
-            {
-                throw new ConfigurationErrorsException("The connection string " + connectionStringName + " is not valid.");
-            }
-        }
-
-        private void ValidateApplicationSetting(string name)
-        {
-            var value = ConfigurationManager.AppSettings[name];
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new ConfigurationErrorsException("The appSettings for " + name + " is invalid.");
-            }
+            Configuration.ValidateConnectionStrings();
+            Configuration.ValidateConfig();
         }
 
         private void PostRunValidationTest()
         {
-            try
-            {
-                // test connection string and any other external resources here....
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Validation test error:", ex);
-                throw;
-            }
+            // test connection string and any other external resources here....
         }
     }
 }

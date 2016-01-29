@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
@@ -52,8 +51,7 @@ namespace FileAuditManager
 
         private void AddWindowsAuth(IAppBuilder appBuilder)
         {
-            var useWindowsAuth = (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["UseWindowsAuth"]) && ConfigurationManager.AppSettings["UseWindowsAuth"].Equals("true", StringComparison.InvariantCultureIgnoreCase));
-            if (useWindowsAuth)
+            if (FileAuditManager.Configuration.UseWindowsAuth)
             {
                 var listener = (HttpListener) appBuilder.Properties[typeof (HttpListener).FullName];
                 listener.AuthenticationSchemes = AuthenticationSchemes.IntegratedWindowsAuthentication;

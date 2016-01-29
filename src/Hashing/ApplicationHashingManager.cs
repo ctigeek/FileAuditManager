@@ -8,22 +8,25 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FileAuditManager.Data;
 using FileAuditManager.Data.Models;
+using FileAuditManager.Mail;
 using log4net;
 
 namespace FileAuditManager.Hashing
 {
-    class ApplicationHashingManager : IApplicationHashingManager
+    internal class ApplicationHashingManager : IApplicationHashingManager
     {
         private static ILog log = LogManager.GetLogger(typeof(ApplicationHashingManager));
         private readonly IApplicationRepository applicationRepository;
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IAuditRepository auditRepository;
+        private readonly IMailService mailService;
 
-        public ApplicationHashingManager(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IAuditRepository auditRepository)
+        public ApplicationHashingManager(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IAuditRepository auditRepository, IMailService mailService)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
             this.auditRepository = auditRepository;
+            this.mailService = mailService;
         }
 
         public async Task AuditHashAllActiveApplications()
@@ -35,67 +38,38 @@ namespace FileAuditManager.Hashing
             }
         }
 
-        public async Task AuditHashApplication(Application application)
+        public async Task AuditHashApplication(Application application, bool sendAuditEmail = true)
         {
             var activeDeployments = await deploymentRepository.GetActiveDeploymentsAsync(application.Name);
+            var failedAudits = new Dictionary<Deployment, DeploymentAudit>();
             foreach (var deployment in activeDeployments)
             {
                 var audit = await HashDeployment(deployment, application.GetRegularExpressions());
                 await SaveAuditAsync(audit);
+                if (!audit.ValidHash) failedAudits.Add(deployment, audit);
+            }
+            if (failedAudits.Count > 0)
+            {
+                log.WarnFormat("Audits failed for the following application & servers:\r\n {0}", string.Join(",", failedAudits.Keys.Select(d => application.Name + " - " + d.ServerName)));
+                await mailService.SendAuditEmail(application.Name, failedAudits);
+            }
+            else
+            {
+                log.InfoFormat("All audits passed for application {0}.", application.Name);
             }
         }
-
-        //public async Task AuditHashApplication(string name)
-        //{
-        //    var application = await applicationRepository.GetApplicationAsync(name);
-        //    if (application == null)
-        //    {
-        //        throw new ArgumentException("Application `" + name + "` does not exist.");
-        //    }
-        //    AuditHashApplication(application);
-        //}
-
-        //public void AuditHashApplication(Application application)
-        //{
-        //    var activeDeployments = deploymentRepository.GetActiveDeploymentsAsync(application.Name).Result;
-        //    var hashDeploymentTasks = GetTasksToHashDeployments(activeDeployments);
-        //    hashDeploymentTasks.RunTasks<DeploymentAudit>(3, task =>
-        //    {
-        //        if (task.IsFaulted)
-        //        {
-        //            log.Error("Error hashing deployment (Application==`" + application.Name + "`:", task.Exception);
-        //        }
-        //        else
-        //        {
-        //            try
-        //            {
-        //                SaveAuditAsync(task.Result).Wait();
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                log.Error("Error saving audit: (Application==`" + application.Name + "`:", task.Exception);
-        //            }
-        //        }
-        //    });
-        //}
-
-        //private IEnumerable<Task<DeploymentAudit>> GetTasksToHashDeployments(IList<Deployment> deployments)
-        //{
-        //    foreach (var deployment in deployments)
-        //    {
-        //        yield return HashDeployment(deployment);
-        //    }
-        //}
 
         public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions)
         {
             var hash = await HashDirectory(deployment.NetworkPath, fileExclusionExpressions);
-            return new DeploymentAudit
+            var audit = new DeploymentAudit
             {
                 DeploymentId = deployment.DeploymentId,
                 Hash = hash,
                 ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase)
             };
+            log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName}. Results: {audit.ValidHash}");
+            return audit;
         }
 
         private async Task<string> HashDirectory(string path, IList<Regex> fileExclusionExpressions)

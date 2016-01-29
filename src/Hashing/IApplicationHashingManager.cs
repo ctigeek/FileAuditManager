@@ -8,7 +8,7 @@ namespace FileAuditManager.Hashing
     public interface IApplicationHashingManager
     {
         Task AuditHashAllActiveApplications();
-        Task AuditHashApplication(Application application);
+        Task AuditHashApplication(Application application, bool sendAuditEmail = true);
         Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions);
     }
 }

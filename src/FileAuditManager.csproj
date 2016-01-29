@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AuditManager.cs" />
+    <Compile Include="Configuration.cs" />
     <Compile Include="Controllers\Models\ModifiedApplication.cs" />
     <Compile Include="Controllers\Models\NewDeployment.cs" />
     <Compile Include="DIContainer.cs" />
@@ -119,6 +120,8 @@
     <Compile Include="Data\MongoRepositoryBase.cs" />
     <Compile Include="Hashing\IApplicationHashingManager.cs" />
     <Compile Include="Hashing\ParallelTaskRunnerExtension.cs" />
+    <Compile Include="Mail\IMailService.cs" />
+    <Compile Include="Mail\MailService.cs" />
     <Compile Include="StructureMapRegistry.cs" />
     <Compile Include="Controllers\FileAuditManagerHttpControllerActivator.cs" />
     <Compile Include="Hashing\ApplicationHashingManager.cs" />

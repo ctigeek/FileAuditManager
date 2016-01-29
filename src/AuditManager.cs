@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Threading;
 using System.Timers;
 using FileAuditManager.Hashing;
@@ -19,8 +18,8 @@ namespace FileAuditManager
         {
             this.hashingManager = hashingManager ?? DIContainer.Container.GetInstance<IApplicationHashingManager>();
 
-            var milliseconds = long.Parse(ConfigurationManager.AppSettings["AuditTimerInMilliseconds"]);
-            if (milliseconds > 19999)
+            var milliseconds = Configuration.AuditTimerInMilliseconds;
+            if (milliseconds > 59999)
             {
                 timer = new Timer(milliseconds);
                 timer.Elapsed += Timer_Elapsed;
