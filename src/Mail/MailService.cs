@@ -41,7 +41,7 @@ namespace FileAuditManager.Mail
                 {
                     sb.AppendFormat(" Audit Time: {0}     Server: {1}      Path: {2} \r\n", failedAudits[deployment].AuditDateTime, deployment.ServerName, deployment.NetworkPath);
                 }
-                sb.AppendFormat("\r\b\r\nEOF");
+                sb.AppendFormat("\r\n\r\nEOF");
 
                 await SendMailgunEmail("Audit error for application " + applicationName, sb.ToString());
             }
