@@ -29,7 +29,7 @@ namespace FileAuditManager
 
         private void AddRequestLogging(IAppBuilder appBuilder)
         {
-            ILog requestLog = LogManager.GetLogger("RequestLog");
+            ILog requestLog = LogManager.GetLogger(ApiRequestLogger.RequestLogName);
             if (requestLog.IsWarnEnabled)
             {
                 appBuilder.Use(async (env, next) =>

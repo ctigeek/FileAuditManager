@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -61,14 +62,16 @@ namespace FileAuditManager.Hashing
 
         public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions)
         {
+            var sw = Stopwatch.StartNew();
             var hash = await HashDirectory(deployment.NetworkPath, fileExclusionExpressions);
+            sw.Stop();
             var audit = new DeploymentAudit
             {
                 DeploymentId = deployment.DeploymentId,
                 Hash = hash,
                 ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase)
             };
-            log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName}. Results: {audit.ValidHash}");
+            log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
             return audit;
         }
 

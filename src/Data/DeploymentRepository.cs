@@ -10,7 +10,7 @@ namespace FileAuditManager.Data
 {
     class DeploymentRepository : MongoRepositoryBase, IDeploymentRepository
     {
-        private const string DeploymentCollection = "Deployment2"; //TODO: change this back
+        private const string DeploymentCollection = "Deployment";
         private readonly IMongoCollection<Deployment> collection;
 
         public DeploymentRepository(MongoUrl mongoUrl, IMongoClient mongoClient)
