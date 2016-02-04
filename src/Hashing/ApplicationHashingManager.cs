@@ -21,6 +21,7 @@ namespace FileAuditManager.Hashing
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IAuditRepository auditRepository;
         private readonly IMailService mailService;
+        private readonly IList<string> listOfFilesHashed = new List<string>();
 
         public ApplicationHashingManager(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IAuditRepository auditRepository, IMailService mailService)
         {
@@ -71,7 +72,14 @@ namespace FileAuditManager.Hashing
                 Hash = hash,
                 ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase)
             };
-            log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
+            if (log.IsDebugEnabled)
+            {
+                log.Debug($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", listOfFilesHashed)}");
+            }
+            else
+            {
+                log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
+            }
             return audit;
         }
 
@@ -121,6 +129,10 @@ namespace FileAuditManager.Hashing
                 }
             }
             HashString(hasher, path);
+            if (log.IsDebugEnabled)
+            {
+                listOfFilesHashed.Add(path);
+            }
         }
 
         private void HashString(SHA1 hasher, string hashThis)
