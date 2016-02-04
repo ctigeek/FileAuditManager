@@ -71,13 +71,13 @@ namespace FileAuditManager.Controllers
                 {
                     return NotFound();
                 }
-                var audit = (await auditRepository.GetAllAuditsAsync(new[] {deployment.DeploymentId})).FirstOrDefault();
-                if (audit == null)
+                var audits = (await auditRepository.GetAllAuditsAsync(new[] {deployment.DeploymentId})).ToList();
+                if (audits.Count == 0)
                 {
                     return NotFound();
                 }
-                var audits = BuildAuditResponseObject(name, new[] {deployment}, new[] {audit});
-                return Ok(audits);
+                var response = BuildAuditResponseObject(name, new[] {deployment}, audits.OrderByDescending(a=>a.AuditDateTime));
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        private object BuildAuditResponseObject(string applicationName, IList<Deployment> deployments, IList<DeploymentAudit> deploymentAudits)
+        private object BuildAuditResponseObject(string applicationName, IList<Deployment> deployments, IEnumerable<DeploymentAudit> deploymentAudits)
         {
             var audits = new List<object>();
             foreach (var deploymentAudit in deploymentAudits.OrderByDescending(a=>a.AuditDateTime))
