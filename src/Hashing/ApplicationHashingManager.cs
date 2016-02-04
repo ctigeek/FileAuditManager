@@ -79,16 +79,33 @@ namespace FileAuditManager.Hashing
         {
             var hasher = SHA1Managed.Create();
             hasher.Initialize();
-            foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
+            
+            foreach (var file in Directory.GetFiles(path, "*"))
             {
                 if (!fileExclusionExpressions.Any(f => f.IsMatch(file)))
                 {
                     await HashFile(hasher, file);
                 }
             }
+            foreach (var directory in Directory.GetDirectories(path).Where(d=>!d.EndsWith("RECYCLE.BIN") && !d.EndsWith("System Volume Information")))
+            {
+                await HashSubDirectoryRecursive(hasher, directory, fileExclusionExpressions);
+            }
+
             hasher.TransformFinalBlock(new byte[0], 0, 0);
             var hashString = BytesToString(hasher.Hash);
             return hashString;
+        }
+
+        private async Task HashSubDirectoryRecursive(SHA1 hasher, string directory, IList<Regex> fileExclusionExpressions )
+        {
+            foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+            {
+                if (!fileExclusionExpressions.Any(f => f.IsMatch(file)))
+                {
+                    await HashFile(hasher, file);
+                }
+            }
         }
 
         private async Task HashFile(SHA1 hasher, string path)
