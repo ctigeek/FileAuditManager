@@ -5,7 +5,7 @@ using FileAuditManager.Data.Models;
 
 namespace FileAuditManager.Hashing
 {
-    public interface IApplicationHashingManager
+    public interface IApplicationHashingService
     {
         Task AuditHashAllActiveApplications();
         Task AuditHashApplication(Application application, bool sendAuditEmail = true);

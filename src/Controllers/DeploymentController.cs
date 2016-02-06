@@ -17,14 +17,14 @@ namespace FileAuditManager.Controllers
         private static readonly ILog Log = LogManager.GetLogger(typeof(ApplicationController));
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IApplicationRepository applicationRepository;
-        private readonly IApplicationHashingManager applicationHashingManager;
+        private readonly IApplicationHashingService applicationHashingService;
         
 
-        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IApplicationHashingManager applicationHashingManager)
+        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IApplicationHashingService applicationHashingService)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
-            this.applicationHashingManager = applicationHashingManager;
+            this.applicationHashingService = applicationHashingService;
         }
 
         public async Task<IHttpActionResult> Get(string name, string serverName = null, [FromUri] bool includeInactive = false)
@@ -105,7 +105,7 @@ namespace FileAuditManager.Controllers
                     NetworkPath = payload.NetworkPath
                 };
 
-                var auditHash = await applicationHashingManager.HashDeployment(deployment, application.GetRegularExpressions());
+                var auditHash = await applicationHashingService.HashDeployment(deployment, application.GetRegularExpressions());
                 deployment.Hash = auditHash.Hash;
 
                 await deploymentRepository.InsertDeploymentAsync(deployment);

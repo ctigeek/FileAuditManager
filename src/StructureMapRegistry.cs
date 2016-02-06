@@ -16,7 +16,7 @@ namespace FileAuditManager
             this.For<IApplicationRepository>().Use<ApplicationRepository>();
             this.For<IDeploymentRepository>().Use<DeploymentRepository>();
             this.For<IAuditRepository>().Use<AuditRepository>();
-            this.For<IApplicationHashingManager>().Use<ApplicationHashingManager>();
+            this.For<IApplicationHashingService>().Use<ApplicationHashingService>();
             this.For<IMailService>().Use<MailService>(() => new MailService(Configuration.SendMailOnAuditFailure,
                                                     Configuration.MailgunUrl, Configuration.MailgunApiKey, 
                                                     Configuration.AuditEmailToAddress, Configuration.AuditEmailFromAddress));

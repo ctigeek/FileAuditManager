@@ -16,17 +16,17 @@ namespace FileAuditManager.Controllers
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IApplicationRepository applicationRepository;
         private readonly IAuditRepository auditRepository;
-        private readonly IApplicationHashingManager applicationHashingManager;
+        private readonly IApplicationHashingService applicationHashingService;
 
         public AuditController(IApplicationRepository applicationRepository, 
                                 IDeploymentRepository deploymentRepository,
                                 IAuditRepository auditRepository,
-                                IApplicationHashingManager applicationHashingManager)
+                                IApplicationHashingService applicationHashingService)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
             this.auditRepository = auditRepository;
-            this.applicationHashingManager = applicationHashingManager;
+            this.applicationHashingService = applicationHashingService;
         }
 
         public async Task<IHttpActionResult> Get(string name)
@@ -106,7 +106,7 @@ namespace FileAuditManager.Controllers
                 }
 
                 var activeDeployment = activeDeployments.FirstOrDefault(d => d.ServerName == serverName);
-                var deploymentAudit = await applicationHashingManager.HashDeployment(activeDeployment, application.GetRegularExpressions());
+                var deploymentAudit = await applicationHashingService.HashDeployment(activeDeployment, application.GetRegularExpressions());
                 await auditRepository.CreateAuditAsync(deploymentAudit);
                 return Ok();
             }

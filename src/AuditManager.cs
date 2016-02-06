@@ -12,11 +12,11 @@ namespace FileAuditManager
         private static ILog Log = LogManager.GetLogger(typeof(AuditManager));
         private static readonly object LockObject = new object();
         private readonly Timer timer;
-        private readonly IApplicationHashingManager hashingManager;
+        private readonly IApplicationHashingService hashingService;
 
-        public AuditManager(IApplicationHashingManager hashingManager)
+        public AuditManager(IApplicationHashingService hashingService)
         {
-            this.hashingManager = hashingManager ?? DIContainer.Container.GetInstance<IApplicationHashingManager>();
+            this.hashingService = hashingService ?? DIContainer.Container.GetInstance<IApplicationHashingService>();
 
             var milliseconds = Configuration.AuditTimerInMilliseconds;
             if (milliseconds > 59999)
@@ -32,7 +32,7 @@ namespace FileAuditManager
             {
                 try
                 {
-                    hashingManager.AuditHashAllActiveApplications().Wait();
+                    hashingService.AuditHashAllActiveApplications().Wait();
                 }
                 catch (Exception ex)
                 {
