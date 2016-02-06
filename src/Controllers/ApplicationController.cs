@@ -24,10 +24,6 @@ namespace FileAuditManager.Controllers
             try
             {
                 var applications = await applicationRepository.GetAllApplicationsAsync();
-                if (applications.Count == 0)
-                {
-                    return NotFound();
-                }
                 return Ok(BuildApplicationResponse(applications));
             }
             catch (Exception ex)

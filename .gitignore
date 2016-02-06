@@ -231,3 +231,5 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+/FileAuditManager-0.9.0-Beta.zip
+/FileAuditManager-0.9.1-Beta.zip
