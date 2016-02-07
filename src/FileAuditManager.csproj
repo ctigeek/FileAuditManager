@@ -118,13 +118,12 @@
     <Compile Include="Data\IDeploymentRepository.cs" />
     <Compile Include="Data\Models\DeploymentAudit.cs" />
     <Compile Include="Data\MongoRepositoryBase.cs" />
-    <Compile Include="Hashing\IApplicationHashingManager.cs" />
-    <Compile Include="Hashing\ParallelTaskRunnerExtension.cs" />
+    <Compile Include="Hashing\IApplicationHashingService.cs" />
     <Compile Include="Mail\IMailService.cs" />
     <Compile Include="Mail\MailService.cs" />
     <Compile Include="StructureMapRegistry.cs" />
     <Compile Include="Controllers\FileAuditManagerHttpControllerActivator.cs" />
-    <Compile Include="Hashing\ApplicationHashingManager.cs" />
+    <Compile Include="Hashing\ApplicationHashingService.cs" />
     <Compile Include="Logging\ApiRequestLogger.cs" />
     <Compile Include="Data\Models\Application.cs" />
     <Compile Include="Data\Models\Deployment.cs" />

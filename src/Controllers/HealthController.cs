@@ -26,7 +26,7 @@ namespace FileAuditManager.Controllers
                 IsHealthy = healthy;
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return BadRequest("bummer");
             }

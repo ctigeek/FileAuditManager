@@ -12,7 +12,7 @@ namespace FileAuditManager
             var serviceName = System.Reflection.Assembly.GetExecutingAssembly().FullName;
             this.ServiceName = serviceName;
             webAppManager = new WebAppManager();
-            auditManager = new AuditManager(null);
+            auditManager = new AuditManager(null, null, null, null, null);
         }
 
         protected override void OnStart(string[] args)

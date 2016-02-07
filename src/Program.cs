@@ -42,7 +42,7 @@ namespace FileAuditManager
                 var actionManager = new WebAppManager();
                 actionManager.Start();
 
-                var auditManager = new AuditManager(null);
+                var auditManager = new AuditManager(null, null, null, null, null);
                 auditManager.Start();
 
                 Console.WriteLine("Press enter to stop....");

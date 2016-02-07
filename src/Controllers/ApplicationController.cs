@@ -99,6 +99,10 @@ namespace FileAuditManager.Controllers
                 {
                     existingApplication.Enabled = payload.Enabled.Value;
                 }
+                if (payload.HashHiddenFiles.HasValue)
+                {
+                    existingApplication.HashHiddenFiles = payload.HashHiddenFiles.Value;
+                }
                 if (payload.FileExclusionExpressions != null)
                 {
                     existingApplication.FileExclusionExpressions = payload.FileExclusionExpressions;

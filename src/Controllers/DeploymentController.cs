@@ -17,14 +17,16 @@ namespace FileAuditManager.Controllers
         private static readonly ILog Log = LogManager.GetLogger(typeof(ApplicationController));
         private readonly IDeploymentRepository deploymentRepository;
         private readonly IApplicationRepository applicationRepository;
+        private readonly IAuditRepository auditRepository;
         private readonly IApplicationHashingService applicationHashingService;
         
 
-        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IApplicationHashingService applicationHashingService)
+        public DeploymentController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository, IApplicationHashingService applicationHashingService, IAuditRepository auditRepository)
         {
             this.applicationRepository = applicationRepository;
             this.deploymentRepository = deploymentRepository;
             this.applicationHashingService = applicationHashingService;
+            this.auditRepository = auditRepository;
         }
 
         public async Task<IHttpActionResult> Get(string name, string serverName = null, [FromUri] bool includeInactive = false)
@@ -90,7 +92,7 @@ namespace FileAuditManager.Controllers
                 var application = await applicationRepository.GetApplicationAsync(name);
                 if (application == null)
                 {
-                    await applicationRepository.InsertApplicationAsync(new Application {Name = name});
+                    return BadRequest("The application " + name + " does not exist.");
                 }
 
                 if (!Directory.Exists(payload.NetworkPath))
@@ -105,10 +107,11 @@ namespace FileAuditManager.Controllers
                     NetworkPath = payload.NetworkPath
                 };
 
-                var auditHash = await applicationHashingService.HashDeployment(deployment, application.GetRegularExpressions());
-                deployment.Hash = auditHash.Hash;
+                var deploymentAudit = await applicationHashingService.HashDeployment(deployment, application.GetRegularExpressions(), application.HashHiddenFiles);
 
                 await deploymentRepository.InsertDeploymentAsync(deployment);
+                await auditRepository.CreateAuditAsync(deploymentAudit);
+
                 return Ok();
             }
             catch (Exception ex)

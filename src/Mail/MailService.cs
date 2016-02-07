@@ -28,22 +28,13 @@ namespace FileAuditManager.Mail
             this.auditEmailFromAddress = auditEmailFromAddress;
         }
 
-        public async Task SendAuditEmail(string applicationName, Dictionary<Deployment, DeploymentAudit> failedAudits )
+        public async Task SendAuditEmail(string subject, string message )
         {
             try
             {
                 if (!sendMailOnAuditFailure) return;
 
-                var sb = new StringBuilder();
-                sb.AppendFormat("This automated email was sent at {0} from server {1}.\r\n\r\n", DateTime.Now, Environment.MachineName);
-                sb.AppendFormat("The following deployments for the application `{0}` failed an audit:\r\n", applicationName);
-                foreach (var deployment in failedAudits.Keys)
-                {
-                    sb.AppendFormat(" Audit Time: {0}     Server: {1}      Path: {2} \r\n", failedAudits[deployment].AuditDateTime, deployment.ServerName, deployment.NetworkPath);
-                }
-                sb.AppendFormat("\r\n\r\nEOF");
-
-                await SendMailgunEmail("Audit error for application " + applicationName, sb.ToString());
+                await SendMailgunEmail(subject, message);
             }
             catch (Exception ex)
             {

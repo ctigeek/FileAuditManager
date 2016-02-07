@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using FileAuditManager.Data.Models;
+﻿using System.Threading.Tasks;
 
 namespace FileAuditManager.Mail
 {
     internal interface IMailService
     {
-        Task SendAuditEmail(string applicationName, Dictionary<Deployment, DeploymentAudit> failedAudits);
+        Task SendAuditEmail(string subject, string message);
     }
 }

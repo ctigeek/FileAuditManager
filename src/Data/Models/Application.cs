@@ -14,6 +14,8 @@ namespace FileAuditManager.Data.Models
 
         public IList<string> FileExclusionExpressions { get; set; } = new List<string>();
 
+        public bool HashHiddenFiles { get; set; } = false;
+
         public IList<Regex> GetRegularExpressions()
         {
             return FileExclusionExpressions.Select(f => new Regex(f)).ToList();
