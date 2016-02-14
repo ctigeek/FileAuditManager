@@ -153,7 +153,7 @@ namespace FileAuditManager.Hashing
 
         private string HashTheHashResults(IList<FileHash> hashResults)
         {
-            var hasher = SHA1Managed.Create();
+            var hasher = CreateHashAlgorithm();
             foreach (var result in hashResults.OrderBy(fh=>fh.Path))
             {
                 var bytes = Encoding.UTF8.GetBytes(result.Hash);
@@ -242,7 +242,7 @@ namespace FileAuditManager.Hashing
                 return;
             }
 
-            var hasher = SHA1Managed.Create();
+            var hasher = CreateHashAlgorithm();
             var buffer = new byte[1024]; //what is optimal here?
             using (var fileStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
@@ -261,19 +261,19 @@ namespace FileAuditManager.Hashing
             hashResults.Add(new FileHash {Path = path, IsHidden = fileIsHidden, LastWriteTime = fileInfo.LastWriteTime, Hash = BytesToString(hasher.Hash)});
         }
 
-        private void HashIsHidden(SHA1 hasher, bool isHidden)
+        private void HashIsHidden(HashAlgorithm hasher, bool isHidden)
         {
             var bytes = new[] {isHidden ? (byte) 1 : (byte) 0};
             hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
         }
 
-        private void HashDateTime(SHA1 hasher, DateTime dateTime)
+        private void HashDateTime(HashAlgorithm hasher, DateTime dateTime)
         {
             var bytes = BitConverter.GetBytes(dateTime.ToBinary());
             hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
         }
 
-        private void HashString(SHA1 hasher, string hashThis)
+        private void HashString(HashAlgorithm hasher, string hashThis)
         {
             var bytes = Encoding.UTF8.GetBytes(hashThis);
             hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
@@ -287,6 +287,11 @@ namespace FileAuditManager.Hashing
                 sb.AppendFormat("{0:X2}", t);
             }
             return sb.ToString();
+        }
+
+        private static HashAlgorithm CreateHashAlgorithm()
+        {
+            return SHA256Managed.Create();
         }
     }
 }
