@@ -40,20 +40,20 @@ namespace FileAuditManager.Hashing
 
         private static void AddToHashesInProgress(Deployment deployment, bool overrideExistingAudit)
         {
+            var existingAuditDeployment = GetExistingAuditDeployment(deployment);
+            if (existingAuditDeployment != null)
+            {
+                if (overrideExistingAudit)
+                {
+                    AbortExistingAudit(existingAuditDeployment);
+                }
+                else
+                {
+                    throw new InvalidOperationException("There is already an audit running for application " + deployment.ApplicationName + " and server " + deployment.ServerName + ".");
+                }
+            }
             lock (LockObject)
             {
-                var existingAuditDeployment = GetExistingAuditDeployment(deployment);
-                if (existingAuditDeployment != null)
-                {
-                    if (overrideExistingAudit)
-                    {
-                        AbortExistingAudit(existingAuditDeployment);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("There is already an audit running for application " + deployment.ApplicationName + " and server " + deployment.ServerName + ".");
-                    }
-                }
                 HashesInProgress.Add(deployment);
                 AbortHashing.Add(deployment.DeploymentId, false);
             }
