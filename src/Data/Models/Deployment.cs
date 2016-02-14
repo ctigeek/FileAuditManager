@@ -22,7 +22,7 @@ namespace FileAuditManager.Data.Models
 
         public DateTime EndDateTime { get; set; } = DateTime.MaxValue;
 
-        public IDictionary<string,string> FileHashes { get; set;  } = new Dictionary<string, string>();
+        public IList<FileHash> FileHashes { get; set; } = new List<FileHash>();
 
         public Guid MostRecentAudit { get; set; } = Guid.Empty;
 

@@ -22,8 +22,7 @@ namespace FileAuditManager.Data.Models
 
     public class FileHashMismatch
     {
-        public string FilePath { get; set; }
-        public string OriginalHash { get; set; }
-        public string AuditHash { get; set; }
+        public FileHash OriginalHash { get; set; }
+        public FileHash AuditHash { get; set; }
     }
 }

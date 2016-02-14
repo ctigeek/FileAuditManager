@@ -18,7 +18,7 @@ namespace FileAuditManager.Hashing
 
         public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles)
         {
-            var hashResults = new Dictionary<string, string>();
+            var hashResults = new List<FileHash>();
             IList<FileHashMismatch> hashDifferences = new List<FileHashMismatch>();
             var sw = Stopwatch.StartNew();
             await HashDirectory(deployment.NetworkPath, fileExclusionExpressions, hashHiddenFiles, hashResults);
@@ -41,7 +41,7 @@ namespace FileAuditManager.Hashing
             };
             if (log.IsDebugEnabled)
             {
-                log.Debug($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults.Keys)}");
+                log.Debug($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults)}");
             }
             else
             {
@@ -50,35 +50,49 @@ namespace FileAuditManager.Hashing
             return audit;
         }
 
-        private IList<FileHashMismatch> DetermineHashDifferences(IDictionary<string, string> deploymentHashes, IDictionary<string, string> hashResults)
+        private IList<FileHashMismatch> DetermineHashDifferences(IList<FileHash> deploymentHashes, IList<FileHash> hashResults)
         {
+            //This is all horribly inefficient... we are searching through the two lists MANY times, which is rediculous. I have an idea for an generic function that can do all of this more efficiently.
             var hashDifferences = new List<FileHashMismatch>();
 
             //1. find things in this audit that aren't in the deployment.
-            foreach (var path in hashResults.Keys.Except(deploymentHashes.Keys, StringComparer.InvariantCultureIgnoreCase))
+            foreach (var path in hashResults.Select(hr => hr.Path).Except(deploymentHashes.Select(dh => dh.Path), StringComparer.InvariantCultureIgnoreCase))
             {
-                hashDifferences.Add(new FileHashMismatch {FilePath = path, AuditHash = hashResults[path], OriginalHash = Deployment.EmptyHash});
+                hashDifferences.Add(new FileHashMismatch
+                {
+                    AuditHash = hashResults.FirstOrDefault(hr => hr.Path.Equals(path, StringComparison.InvariantCultureIgnoreCase)),
+                    OriginalHash = null
+                });
             }
+
             //2. find things in the deployment that aren't in this audit.
-            foreach (var path in deploymentHashes.Keys.Except(hashResults.Keys, StringComparer.InvariantCultureIgnoreCase))
+            foreach (var path in deploymentHashes.Select(dh=>dh.Path).Except(hashResults.Select(hr=>hr.Path), StringComparer.InvariantCultureIgnoreCase))
             {
-                hashDifferences.Add(new FileHashMismatch {FilePath = path, AuditHash = Deployment.EmptyHash, OriginalHash = deploymentHashes[path]});
+                hashDifferences.Add(new FileHashMismatch
+                {
+                    AuditHash = null,
+                    OriginalHash = deploymentHashes.FirstOrDefault(dh=>dh.Path.Equals(path, StringComparison.InvariantCultureIgnoreCase))
+                });
             }
             //3. find hashes that don't match.
-            foreach (var pathHash in deploymentHashes.Where(dh => hashResults.ContainsKey(dh.Key) && dh.Value != hashResults[dh.Key]))
+            foreach (var fileHash in deploymentHashes.Where(dh => hashResults.Any(hr=> hr.Path == dh.Path && hr.Hash != dh.Hash)))
             {
-                hashDifferences.Add(new FileHashMismatch {FilePath = pathHash.Key, AuditHash = hashResults[pathHash.Key], OriginalHash = pathHash.Value});
+                hashDifferences.Add(new FileHashMismatch
+                {
+                    AuditHash = hashResults.FirstOrDefault(hr => hr.Path.Equals(fileHash.Path, StringComparison.InvariantCultureIgnoreCase)),
+                    OriginalHash = fileHash
+                });
             }
 
             return hashDifferences;
         }
 
-        private string HashTheHashResults(IDictionary<string, string> hashResults)
+        private string HashTheHashResults(IList<FileHash> hashResults)
         {
             var hasher = SHA1Managed.Create();
-            foreach (var path in hashResults.Keys.OrderBy(k=>k))
+            foreach (var result in hashResults.OrderBy(fh=>fh.Path))
             {
-                var bytes = Encoding.UTF8.GetBytes(hashResults[path]);
+                var bytes = Encoding.UTF8.GetBytes(result.Hash);
                 hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
             }
             hasher.TransformFinalBlock(new byte[0], 0, 0);
@@ -86,7 +100,7 @@ namespace FileAuditManager.Hashing
             return hashString;
         }
 
-        private async Task HashDirectory(string path, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IDictionary<string,string> hashResults)
+        private async Task HashDirectory(string path, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
         {
             foreach (var file in Directory.GetFiles(path, "*"))
             {
@@ -101,7 +115,7 @@ namespace FileAuditManager.Hashing
             }
         }
 
-        private async Task HashSubDirectoryRecursive(string directory, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IDictionary<string,string> hashResults)
+        private async Task HashSubDirectoryRecursive(string directory, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
         {
             var directoryInfo = new DirectoryInfo(directory);
             if ((directoryInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && !hashHiddenFiles)
@@ -118,15 +132,17 @@ namespace FileAuditManager.Hashing
             }
         }
 
-        private async Task HashFile(string path, bool hashHiddenFiles, IDictionary<string,string> hashResults )
+        private async Task HashFile(string path, bool hashHiddenFiles, IList<FileHash> hashResults )
         {
-            var hasher = SHA1Managed.Create();
-            var buffer = new byte[1024]; //what is optimal here?
             var fileInfo = new FileInfo(path);
-            if ((fileInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && !hashHiddenFiles)
+            var fileIsHidden = (fileInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
+            if (fileIsHidden && !hashHiddenFiles)
             {
                 return;
             }
+
+            var hasher = SHA1Managed.Create();
+            var buffer = new byte[1024]; //what is optimal here?
             using (var fileStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 while (true)
@@ -138,9 +154,16 @@ namespace FileAuditManager.Hashing
             }
             HashString(hasher, path);
             HashDateTime(hasher, fileInfo.LastWriteTimeUtc);
+            HashIsHidden(hasher, fileIsHidden);
 
             hasher.TransformFinalBlock(new byte[0], 0, 0);
-            hashResults.Add(path, BytesToString(hasher.Hash));
+            hashResults.Add(new FileHash {Path = path, IsHidden = fileIsHidden, LastWriteTime = fileInfo.LastWriteTime, Hash = BytesToString(hasher.Hash)});
+        }
+
+        private void HashIsHidden(SHA1 hasher, bool isHidden)
+        {
+            var bytes = new[] {isHidden ? (byte) 1 : (byte) 0};
+            hasher.TransformBlock(bytes, 0, bytes.Length, null, 0);
         }
 
         private void HashDateTime(SHA1 hasher, DateTime dateTime)

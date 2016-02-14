@@ -105,6 +105,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="Controllers\Models\ModifiedApplication.cs" />
     <Compile Include="Controllers\Models\NewDeployment.cs" />
+    <Compile Include="Data\Models\FileHash.cs" />
     <Compile Include="DIContainer.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AuditController.cs" />

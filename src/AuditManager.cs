@@ -86,7 +86,7 @@ namespace FileAuditManager
                     sb.AppendFormat("Audit UTC:{0},  Server {1}:\r\n", failedAudit.Value.AuditDateTime.ToLongTimeString(), failedAudit.Key.ServerName);
                     foreach (var fileHashMismatch in failedAudit.Value.FileHashMismatches)
                     {
-                        sb.AppendFormat("File: {0},  Deployment Hash:{1}, Audit Hash:{2} \r\n", fileHashMismatch.FilePath, fileHashMismatch.OriginalHash, fileHashMismatch.AuditHash);
+                        sb.AppendFormat("Deployment Hash:{1}, Audit Hash:{2} \r\n", fileHashMismatch.OriginalHash, fileHashMismatch.AuditHash);
                     }
                 }
 
