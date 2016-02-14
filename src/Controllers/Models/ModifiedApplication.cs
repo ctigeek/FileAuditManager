@@ -9,6 +9,5 @@ namespace FileAuditManager.Controllers.Models
         public bool? HashHiddenFiles { get; set; }
 
         public IList<string> FileExclusionExpressions { get; set; }
-
     }
 }
