@@ -6,49 +6,113 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using FileAuditManager.Data.Models;
 using log4net;
 
 namespace FileAuditManager.Hashing
 {
+    //This class is officially a mess... I've refactored it a few times.  I think making it a single-use class, and segregating out the check for existing audits will probably help a lot.
+    //  (when most of the methods in your class could be made static without any impact, you probably need to redesign it.)
     internal class ApplicationHashingService : IApplicationHashingService
     {
         private static ILog log = LogManager.GetLogger(typeof(ApplicationHashingService));
 
-        public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles)
+        public async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, bool overrideExistingAudit)
         {
-            var hashResults = new List<FileHash>();
-            IList<FileHashMismatch> hashDifferences = new List<FileHashMismatch>();
-            var sw = Stopwatch.StartNew();
-            await HashDirectory(deployment.NetworkPath, fileExclusionExpressions, hashHiddenFiles, hashResults);
-            var hash = HashTheHashResults(hashResults);
-
-            if (deployment.Hash == Deployment.EmptyHash) deployment.Hash = hash;
-            if (deployment.FileHashes == null || deployment.FileHashes.Count == 0) deployment.FileHashes = hashResults;
-            if (hash != deployment.Hash)
+            try
             {
-                hashDifferences = DetermineHashDifferences(deployment.FileHashes, hashResults);
+                AddToHashesInProgress(deployment, overrideExistingAudit);
+                var audit = await HashDeployment(deployment, fileExclusionExpressions, hashHiddenFiles);
+                return audit;
             }
-            sw.Stop();
-
-            var audit = new DeploymentAudit
+            finally
             {
-                DeploymentId = deployment.DeploymentId,
-                Hash = hash,
-                ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase),
-                FileHashMismatches = hashDifferences
-            };
-            if (log.IsDebugEnabled)
-            {
-                log.Debug($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults)}");
+                RemoveFromHashingInProgress(deployment);
             }
-            else
-            {
-                log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
-            }
-            return audit;
         }
+
+        #region Lockables....
+        private static readonly object LockObject = new object();
+        private static readonly List<Deployment> HashesInProgress = new List<Deployment>();
+        private static readonly Dictionary<Guid, bool> AbortHashing = new Dictionary<Guid, bool>();
+
+        private static void AddToHashesInProgress(Deployment deployment, bool overrideExistingAudit)
+        {
+            lock (LockObject)
+            {
+                var existingAuditDeployment = GetExistingAuditDeployment(deployment);
+                if (existingAuditDeployment != null)
+                {
+                    if (overrideExistingAudit)
+                    {
+                        AbortExistingAudit(existingAuditDeployment);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("There is already an audit running for application " + deployment.ApplicationName + " and server " + deployment.ServerName + ".");
+                    }
+                }
+                HashesInProgress.Add(deployment);
+                AbortHashing.Add(deployment.DeploymentId, false);
+            }
+        }
+
+        private static void RemoveFromHashingInProgress(Deployment deployment)
+        {
+            lock (LockObject)
+            {
+                HashesInProgress.Remove(deployment);
+                AbortHashing.Remove(deployment.DeploymentId);
+            }
+        }
+
+        private static void AbortHashIfNecessary(Deployment deployment)
+        {
+            lock (LockObject)
+            {
+                if (AbortHashing.ContainsKey(deployment.DeploymentId) && AbortHashing[deployment.DeploymentId])
+                {
+                    throw new ApplicationException("The audit running for application " + deployment.ApplicationName + " and server " + deployment.ServerName + " was aborted for a new audit request.");
+                }
+            }
+        }
+
+        private static Deployment GetExistingAuditDeployment (Deployment deployment)
+        {
+            lock (LockObject)
+            {
+                return HashesInProgress.FirstOrDefault(h => h.ApplicationName == deployment.ApplicationName && h.ServerName == deployment.ServerName);
+            }
+        }
+
+        private static void AbortExistingAudit(Deployment existingAuditDeployment)
+        {
+            lock (LockObject)
+            {
+                if (AbortHashing.ContainsKey(existingAuditDeployment.DeploymentId)) AbortHashing[existingAuditDeployment.DeploymentId] = true;
+            }
+            bool abortedFlag = false;
+            for (int i = 0; i < 50; i++)
+            {
+                Thread.Sleep(500);
+                lock (LockObject)
+                {
+                    if (!AbortHashing.ContainsKey(existingAuditDeployment.DeploymentId))
+                    {
+                        abortedFlag = true;
+                        break;
+                    }
+                }
+            }
+            if (!abortedFlag)
+            {
+                throw new InvalidOperationException("There is already an audit running for application " + existingAuditDeployment.ApplicationName + " and server " + existingAuditDeployment.ServerName + " and it could not be abandoned.");
+            }
+        }
+
+        #endregion
 
         private IList<FileHashMismatch> DetermineHashDifferences(IList<FileHash> deploymentHashes, IList<FileHash> hashResults)
         {
@@ -100,22 +164,58 @@ namespace FileAuditManager.Hashing
             return hashString;
         }
 
-        private async Task HashDirectory(string path, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
+        private async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles)
         {
-            foreach (var file in Directory.GetFiles(path, "*"))
+            var hashResults = new List<FileHash>();
+            IList<FileHashMismatch> hashDifferences = new List<FileHashMismatch>();
+            var sw = Stopwatch.StartNew();
+            await HashDirectory(deployment, fileExclusionExpressions, hashHiddenFiles, hashResults);
+            var hash = HashTheHashResults(hashResults);
+
+            if (deployment.Hash == Deployment.EmptyHash) deployment.Hash = hash;
+            if (deployment.FileHashes == null || deployment.FileHashes.Count == 0) deployment.FileHashes = hashResults;
+            if (hash != deployment.Hash)
+            {
+                hashDifferences = DetermineHashDifferences(deployment.FileHashes, hashResults);
+            }
+            sw.Stop();
+
+            var audit = new DeploymentAudit
+            {
+                DeploymentId = deployment.DeploymentId,
+                Hash = hash,
+                ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase),
+                FileHashMismatches = hashDifferences
+            };
+            if (log.IsDebugEnabled)
+            {
+                log.Debug(
+                    $"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults)}");
+            }
+            else
+            {
+                log.Info(
+                    $"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
+            }
+            return audit;
+        }
+
+        private async Task HashDirectory(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
+        {
+            foreach (var file in Directory.GetFiles(deployment.NetworkPath, "*"))
             {
                 if (!fileExclusionExpressions.Any(f => f.IsMatch(file)))
                 {
-                    await HashFile(file, hashHiddenFiles, hashResults);
+                    await HashFile(deployment, file, hashHiddenFiles, hashResults);
                 }
             }
-            foreach (var directory in Directory.GetDirectories(path).Where(d=>!d.EndsWith("RECYCLE.BIN") && !d.EndsWith("System Volume Information")))
+            foreach (var directory in Directory.GetDirectories(deployment.NetworkPath).Where(d=>!d.EndsWith("RECYCLE.BIN") && !d.EndsWith("System Volume Information")))
             {
-                await HashSubDirectoryRecursive(directory, fileExclusionExpressions, hashHiddenFiles, hashResults);
+                await HashSubDirectoryRecursive(deployment, directory, fileExclusionExpressions, hashHiddenFiles, hashResults);
             }
         }
 
-        private async Task HashSubDirectoryRecursive(string directory, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
+        private async Task HashSubDirectoryRecursive(Deployment deployment, string directory, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, IList<FileHash> hashResults)
         {
             var directoryInfo = new DirectoryInfo(directory);
             if ((directoryInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && !hashHiddenFiles)
@@ -127,13 +227,14 @@ namespace FileAuditManager.Hashing
             {
                 if (!fileExclusionExpressions.Any(f => f.IsMatch(file)))
                 {
-                    await HashFile(file, hashHiddenFiles, hashResults);
+                    await HashFile(deployment, file, hashHiddenFiles, hashResults);
                 }
             }
         }
 
-        private async Task HashFile(string path, bool hashHiddenFiles, IList<FileHash> hashResults )
+        private async Task HashFile(Deployment deployment, string path, bool hashHiddenFiles, IList<FileHash> hashResults )
         {
+            AbortHashIfNecessary(deployment);
             var fileInfo = new FileInfo(path);
             var fileIsHidden = (fileInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
             if (fileIsHidden && !hashHiddenFiles)

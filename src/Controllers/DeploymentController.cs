@@ -107,7 +107,7 @@ namespace FileAuditManager.Controllers
                     NetworkPath = payload.NetworkPath
                 };
 
-                var deploymentAudit = await applicationHashingService.HashDeployment(deployment, application.GetRegularExpressions(), application.HashHiddenFiles);
+                var deploymentAudit = await applicationHashingService.HashDeployment(deployment, application.GetRegularExpressions(), application.HashHiddenFiles, true);
 
                 await deploymentRepository.InsertDeploymentAsync(deployment);
                 await auditRepository.CreateAuditAsync(deploymentAudit);

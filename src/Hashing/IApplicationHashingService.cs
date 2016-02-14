@@ -7,6 +7,6 @@ namespace FileAuditManager.Hashing
 {
     public interface IApplicationHashingService
     {
-        Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles);
+        Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles, bool overrideExistingAudit);
     }
 }

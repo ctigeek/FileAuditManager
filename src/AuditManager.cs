@@ -73,7 +73,7 @@ namespace FileAuditManager
             var failedAudits = new Dictionary<Deployment, DeploymentAudit>();
             foreach (var deployment in activeDeployments)
             {
-                var audit = await hashingService.HashDeployment(deployment, application.GetRegularExpressions(), application.HashHiddenFiles);
+                var audit = await hashingService.HashDeployment(deployment, application.GetRegularExpressions(), application.HashHiddenFiles, false);
                 await auditRepository.CreateAuditAsync(audit);
                 if (!audit.ValidHash) failedAudits.Add(deployment, audit);
             }
