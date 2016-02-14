@@ -112,7 +112,7 @@ namespace FileAuditManager.Controllers
                 await deploymentRepository.InsertDeploymentAsync(deployment);
                 await auditRepository.CreateAuditAsync(deploymentAudit);
 
-                return Ok();
+                return Ok(deployment);
             }
             catch (Exception ex)
             {
