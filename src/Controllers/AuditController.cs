@@ -108,7 +108,8 @@ namespace FileAuditManager.Controllers
                 var activeDeployment = activeDeployments.FirstOrDefault(d => d.ServerName == serverName);
                 var deploymentAudit = await applicationHashingService.HashDeployment(activeDeployment, application.GetRegularExpressions(), application.HashHiddenFiles);
                 await auditRepository.CreateAuditAsync(deploymentAudit);
-                return Ok();
+
+                return Ok(deploymentAudit);
             }
             catch (Exception ex)
             {
