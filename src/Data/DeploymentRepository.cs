@@ -59,7 +59,7 @@ namespace FileAuditManager.Data
             var matchingDeployment = existingActiveDeployments.FirstOrDefault(ead => ead.ServerName.Equals(deployment.ServerName, StringComparison.InvariantCultureIgnoreCase));
             if (matchingDeployment != null)
             {
-                taskList.Add(DeleteDeploymentAsync(matchingDeployment.DeploymentId, deployment.StartDateTime));
+                taskList.Add(DeleteDeploymentAsync(matchingDeployment.ApplicationName, matchingDeployment.ServerName, deployment.StartDateTime));
             }
             taskList.Add(collection.InsertOneAsync(deployment));
             await Task.WhenAll(taskList);
@@ -71,9 +71,9 @@ namespace FileAuditManager.Data
             return updateResult.ModifiedCount;
         }
 
-        public async Task<long> DeleteDeploymentAsync(Guid deploymentId, DateTime endDateTime)
+        public async Task<long> DeleteDeploymentAsync(string name, string serverName, DateTime endDateTime)
         {
-            var updateResult = await collection.UpdateOneAsync(d => d.DeploymentId == deploymentId, Builders<Deployment>.Update.Set(d => d.EndDateTime, endDateTime));
+            var updateResult = await collection.UpdateOneAsync(d => d.ApplicationName == name && d.ServerName == serverName, Builders<Deployment>.Update.Set(d => d.EndDateTime, endDateTime));
             return updateResult.ModifiedCount;
         }
     }

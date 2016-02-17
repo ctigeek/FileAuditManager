@@ -139,7 +139,7 @@ namespace FileAuditManager
                     httpMethod = new HttpMethodConstraint(HttpMethod.Get)
                 });
             httpConfiguration.Routes.MapHttpRoute(
-                name: "DeploymentPost",
+                name: "DeploymentCreateDelete",
                 routeTemplate: "application/{name}/deployment/{serverName}",
                 defaults: new
                 {
@@ -147,20 +147,7 @@ namespace FileAuditManager
                 },
                 constraints: new
                 {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
-                });
-
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "DeploymentDelete",
-                routeTemplate: "application/{name}/audit/{deploymentId}",
-                defaults: new
-                {
-                    deploymentId = RouteParameter.Optional,
-                    controller = "Deployment"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Delete)
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post, HttpMethod.Delete)
                 });
 
             //-----------------------------------------Audit

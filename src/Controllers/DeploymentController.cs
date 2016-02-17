@@ -121,11 +121,17 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Delete(Guid deploymentId)
+        public async Task<IHttpActionResult> Delete(string name, string serverName)
         {
             try
             {
-                await deploymentRepository.DeleteDeploymentAsync(deploymentId, DateTime.UtcNow);
+                var application = await applicationRepository.GetApplicationAsync(name);
+                if (application == null)
+                {
+                    return BadRequest("The application " + name + " does not exist.");
+                }
+
+                await deploymentRepository.DeleteDeploymentAsync(name, serverName, DateTime.UtcNow);
                 return Ok();
             }
             catch (Exception ex)
