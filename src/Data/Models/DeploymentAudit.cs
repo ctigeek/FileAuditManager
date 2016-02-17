@@ -13,9 +13,11 @@ namespace FileAuditManager.Data.Models
 
         public DateTime AuditDateTime { get; set; } = DateTime.UtcNow;
 
-        public string Hash { get; set; }
+        public string Hash { get; set; } = Deployment.EmptyHash;
 
-        public bool ValidHash { get; set; }
+        public bool ValidHash { get; set; } = false;
+
+        public string Error { get; set; } = string.Empty;
 
         public IList<FileHashMismatch> FileHashMismatches { get; set; } = new List<FileHashMismatch>();
     }

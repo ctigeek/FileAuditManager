@@ -166,36 +166,47 @@ namespace FileAuditManager.Hashing
 
         private async Task<DeploymentAudit> HashDeployment(Deployment deployment, IList<Regex> fileExclusionExpressions, bool hashHiddenFiles)
         {
-            var hashResults = new List<FileHash>();
-            IList<FileHashMismatch> hashDifferences = new List<FileHashMismatch>();
-            var sw = Stopwatch.StartNew();
-            await HashDirectory(deployment, fileExclusionExpressions, hashHiddenFiles, hashResults);
-            var hash = HashTheHashResults(hashResults);
+            DeploymentAudit audit;
+            try
+            {
+                var hashResults = new List<FileHash>();
+                IList<FileHashMismatch> hashDifferences = new List<FileHashMismatch>();
+                var sw = Stopwatch.StartNew();
+                await HashDirectory(deployment, fileExclusionExpressions, hashHiddenFiles, hashResults);
+                var hash = HashTheHashResults(hashResults);
 
-            if (deployment.Hash == Deployment.EmptyHash) deployment.Hash = hash;
-            if (deployment.FileHashes == null || deployment.FileHashes.Count == 0) deployment.FileHashes = hashResults;
-            if (hash != deployment.Hash)
-            {
-                hashDifferences = DetermineHashDifferences(deployment.FileHashes, hashResults);
-            }
-            sw.Stop();
+                if (deployment.Hash == Deployment.EmptyHash) deployment.Hash = hash;
+                if (deployment.FileHashes == null || deployment.FileHashes.Count == 0) deployment.FileHashes = hashResults;
+                if (hash != deployment.Hash)
+                {
+                    hashDifferences = DetermineHashDifferences(deployment.FileHashes, hashResults);
+                }
+                sw.Stop();
+                audit = new DeploymentAudit
+                {
+                    DeploymentId = deployment.DeploymentId,
+                    Hash = hash,
+                    ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase),
+                    FileHashMismatches = hashDifferences
+                };
 
-            var audit = new DeploymentAudit
-            {
-                DeploymentId = deployment.DeploymentId,
-                Hash = hash,
-                ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase),
-                FileHashMismatches = hashDifferences
-            };
-            if (log.IsDebugEnabled)
-            {
-                log.Debug(
-                    $"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults)}");
+                if (log.IsDebugEnabled)
+                {
+                    log.Debug($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash} \r\n List of files included in hash: \r\n {string.Join("\r\n", hashResults)}");
+                }
+                else
+                {
+                    log.Info($"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                log.Info(
-                    $"Completed audit for application {deployment.ApplicationName} on server {deployment.ServerName} with hash {hash} in {sw.Elapsed.TotalSeconds} seconds. \r\n Results: {audit.ValidHash}");
+                log.Error("Error while running audit for application {deployment.ApplicationName} on server {deployment.ServerName}.", ex);
+                audit = new DeploymentAudit
+                {
+                    DeploymentId = deployment.DeploymentId,
+                    Error = ex.Message
+                };
             }
             return audit;
         }
