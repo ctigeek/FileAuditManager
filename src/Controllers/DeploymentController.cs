@@ -29,7 +29,7 @@ namespace FileAuditManager.Controllers
             this.auditRepository = auditRepository;
         }
 
-        public async Task<IHttpActionResult> Get(string name, string serverName = null, [FromUri] bool includeInactive = false)
+        public async Task<IHttpActionResult> Get(string name, string serverName = null, [FromUri] bool includeInactive = false, [FromUri] bool includeFiles = false)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace FileAuditManager.Controllers
                 {
                     return NotFound();
                 }
-                return Ok(BuildDeploymentResponse(activeDeploymentsTask.Result, name));
+                return Ok(BuildDeploymentResponse(activeDeploymentsTask.Result, name, includeFiles));
             }
             catch (Exception ex)
             {
@@ -56,7 +56,7 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        public async Task<IHttpActionResult> Get(string name, [FromUri] Guid deploymentId)
+        public async Task<IHttpActionResult> Get(string name, [FromUri] Guid deploymentId, [FromUri] bool includeFiles = false)
         {
             try
             {
@@ -72,6 +72,8 @@ namespace FileAuditManager.Controllers
                 {
                     return NotFound();
                 }
+                var deployment = activeDeploymentsTask.Result;
+                if (!includeFiles) deployment.FileHashes = null;
                 return Ok(activeDeploymentsTask.Result);
             }
             catch (Exception ex)
@@ -111,7 +113,7 @@ namespace FileAuditManager.Controllers
 
                 await deploymentRepository.InsertDeploymentAsync(deployment);
                 await auditRepository.CreateAuditAsync(deploymentAudit);
-
+                deployment.FileHashes = null;
                 return Ok(deployment);
             }
             catch (Exception ex)
@@ -141,8 +143,15 @@ namespace FileAuditManager.Controllers
             }
         }
 
-        private object BuildDeploymentResponse(IList<Deployment> deployments, string applicationName)
+        private object BuildDeploymentResponse(IList<Deployment> deployments, string applicationName, bool includeFiles)
         {
+            if (!includeFiles)
+            {
+                foreach (var deployment in deployments)
+                {
+                    deployment.FileHashes = null;
+                }
+            }
             return new
             {
                 Application = applicationName,

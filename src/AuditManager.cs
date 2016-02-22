@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,7 +85,7 @@ namespace FileAuditManager
                     sb.AppendFormat("Audit UTC:{0},  Server {1}:\r\n", failedAudit.Value.AuditDateTime.ToLongTimeString(), failedAudit.Key.ServerName);
                     foreach (var fileHashMismatch in failedAudit.Value.FileHashMismatches)
                     {
-                        sb.AppendFormat("Deployment Hash:{1}, Audit Hash:{2} \r\n", fileHashMismatch.OriginalHash, fileHashMismatch.AuditHash);
+                        sb.AppendFormat("Deployment Hash:{0}, Audit Hash:{1} \r\n", fileHashMismatch.OriginalHash, fileHashMismatch.AuditHash);
                     }
                 }
 

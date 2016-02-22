@@ -135,7 +135,9 @@ namespace FileAuditManager.Controllers
                         DeploymentHash = deployment.Hash,
                         AuditDateTime = deploymentAudit.AuditDateTime,
                         AuditHash = deploymentAudit.Hash,
-                        ValidHash = deploymentAudit.ValidHash
+                        ValidHash = deploymentAudit.ValidHash,
+                        Error = deploymentAudit.Error,
+                        HashErrors = deploymentAudit.FileHashMismatches
                     });
                 }
             }
