@@ -138,7 +138,7 @@ namespace FileAuditManager.Controllers
                 }
                 if (audit == null)
                 {
-                    return BadRequest("Unknown application name: `" + name + "`.");
+                    return NotFound();
                 }
                 var newComments = new List<AuditComment>(audit.Comments);
                 newComments.Add(auditComment);
@@ -162,6 +162,7 @@ namespace FileAuditManager.Controllers
                 {
                     audits.Add(new
                     {
+                        AuditId = deploymentAudit.DeploymentAuditId,
                         DeploymentId = deployment.DeploymentId,
                         ServerName = deployment.ServerName,
                         NetworkPath = deployment.NetworkPath,
