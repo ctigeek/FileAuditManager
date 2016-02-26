@@ -103,6 +103,7 @@
   <ItemGroup>
     <Compile Include="AuditManager.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="Controllers\FileAuditManagerControllerSelector.cs" />
     <Compile Include="Controllers\Models\ModifiedApplication.cs" />
     <Compile Include="Controllers\Models\NewDeployment.cs" />
     <Compile Include="Data\Models\FileHash.cs" />
