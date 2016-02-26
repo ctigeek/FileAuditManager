@@ -13,17 +13,19 @@ namespace FileAuditManager.Controllers
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(ApplicationController));
         private readonly IApplicationRepository applicationRepository;
+        private readonly IDeploymentRepository deploymentRepository;
 
-        public ApplicationController(IApplicationRepository applicationRepository)
+        public ApplicationController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository)
         {
             this.applicationRepository = applicationRepository;
+            this.deploymentRepository = deploymentRepository;
         }
 
-        public async Task<IHttpActionResult> Get()
+        public async Task<IHttpActionResult> Get([FromUri]bool activeOnly = true)
         {
             try
             {
-                var applications = await applicationRepository.GetAllApplicationsAsync();
+                var applications = await applicationRepository.GetAllApplicationsAsync(activeOnly);
                 return Ok(BuildApplicationResponse(applications));
             }
             catch (Exception ex)
@@ -108,7 +110,7 @@ namespace FileAuditManager.Controllers
                     existingApplication.FileExclusionExpressions = payload.FileExclusionExpressions;
                 }
 
-                await applicationRepository.UpdateApplication(existingApplication);
+                await applicationRepository.ReplaceApplication(existingApplication);
                 return Ok();
             }
             catch (Exception ex)

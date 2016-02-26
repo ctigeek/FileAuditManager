@@ -12,6 +12,8 @@ using log4net;
 using Owin;
 using FileAuditManager.Logging;
 using Microsoft.Owin;
+using HttpMethodConstraint = System.Web.Http.Routing.HttpMethodConstraint;
+using System.Collections.Generic;
 
 namespace FileAuditManager
 {
@@ -115,8 +117,7 @@ namespace FileAuditManager
         {
             var httpConfiguration = new HttpConfiguration();
             httpConfiguration.Services.Replace(typeof(IHttpControllerActivator), new FileAuditManagerHttpControllerActivator());
-            httpConfiguration.Services.Replace(typeof(IHttpControllerSelector), new FileAuditManagerControllerSelector(httpConfiguration));
-
+            
             //------------------------------------------  Application
             httpConfiguration.Routes.MapHttpRoute(
                 name: "Application",
@@ -125,8 +126,24 @@ namespace FileAuditManager
                 {
                     name = RouteParameter.Optional,
                     controller = "Application"
+                },
+                constraints: new
+                {
+                    url = new LowercaseRouteConstraint()
                 });
             //------------------------------------------  Deployment
+            httpConfiguration.Routes.MapHttpRoute(
+                name: "DeploymentCreateDelete",
+                routeTemplate: "application/{name}/deployment/{serverName}",
+                defaults: new
+                {
+                    controller = "Deployment"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post, HttpMethod.Delete),
+                    url = new LowercaseRouteConstraint()
+                });
             httpConfiguration.Routes.MapHttpRoute(
                 name: "DeploymentGet",
                 routeTemplate: "application/{name}/deployment/{serverName}",
@@ -137,20 +154,9 @@ namespace FileAuditManager
                 },
                 constraints: new
                 {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Get)
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Get),
+                    url = new LowercaseRouteConstraint()
                 });
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "DeploymentCreateDelete",
-                routeTemplate: "application/{name}/deployment/{serverName}",
-                defaults: new
-                {
-                    controller = "Deployment"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post, HttpMethod.Delete)
-                });
-
             //-----------------------------------------Audit
             httpConfiguration.Routes.MapHttpRoute(
                 name: "AuditPost",
@@ -161,7 +167,8 @@ namespace FileAuditManager
                 },
                 constraints: new
                 {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post),
+                    url = new LowercaseRouteConstraint()
                 });
             httpConfiguration.Routes.MapHttpRoute(
                 name: "AddComment",
@@ -173,7 +180,8 @@ namespace FileAuditManager
                 },
                 constraints: new
                 {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post),
+                    url = new LowercaseRouteConstraint()
                 });
             httpConfiguration.Routes.MapHttpRoute(
                 name: "Audit",
@@ -182,6 +190,10 @@ namespace FileAuditManager
                 {
                     serverName = RouteParameter.Optional,
                     controller = "Audit"
+                }, 
+                constraints: new
+                {
+                    url = new LowercaseRouteConstraint()
                 });
             // --------------------------------------- Health
             httpConfiguration.Routes.MapHttpRoute(
@@ -190,10 +202,23 @@ namespace FileAuditManager
                 defaults: new
                 {
                     controller = "Health"
+                },
+                constraints: new
+                {
+                    url = new LowercaseRouteConstraint()
                 });
 
             appBuilder.UseWebApi(httpConfiguration);
             Log.Debug("Registered WebApi route configuration.");
+        }
+    }
+
+    public class LowercaseRouteConstraint : IHttpRouteConstraint
+    {
+        public bool Match(HttpRequestMessage request, IHttpRoute route, string parameterName, IDictionary<string, object> values, HttpRouteDirection routeDirection)
+        {
+            var path = request.RequestUri.AbsolutePath;
+            return path.Equals(path.ToLowerInvariant(), StringComparison.InvariantCulture);
         }
     }
 }

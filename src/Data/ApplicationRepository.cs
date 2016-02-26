@@ -52,7 +52,7 @@ namespace FileAuditManager.Data
             }
         }
 
-        public async Task UpdateApplication(Application application)
+        public async Task ReplaceApplication(Application application)
         {
             await collection.ReplaceOneAsync(a => a.Name == application.Name, application);
         }

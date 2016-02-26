@@ -1,10 +1,12 @@
 ﻿using System;
 using System.ServiceProcess;
+using FileAuditManager.Data;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Core;
 using log4net.Layout;
+using MongoDB.Driver;
 
 namespace FileAuditManager
 {
@@ -21,6 +23,10 @@ namespace FileAuditManager
                 {
                     RunCommandLine();
                 }
+                else if (args[0] == "close" && args.Length == 2)
+                {
+                    CloseDeployment(args[1]);
+                }
                 else
                 {
                     Console.WriteLine("Error. Use `debug` to run in command line.");
@@ -30,6 +36,21 @@ namespace FileAuditManager
             else
             {
                 ServiceBase.Run(new ServiceManager());
+            }
+        }
+
+        private static void CloseDeployment(string deploymentId)
+        {
+            try
+            {
+                var deploymentRepository = new DeploymentRepository(Configuration.MongoUrl, new MongoClient(Configuration.MongoUrl));
+                var guid = new Guid(deploymentId);
+                deploymentRepository.ChangeDeploymentEndDateTime(guid, DateTime.UtcNow).Wait();
+                Console.WriteLine("Done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 

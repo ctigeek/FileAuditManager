@@ -72,6 +72,12 @@ namespace FileAuditManager.Data
             return updateResult.ModifiedCount;
         }
 
+        public async Task<long> ReplaceDeployment(Deployment deployment)
+        {
+            var updateResult = await collection.ReplaceOneAsync(d => d.DeploymentId == deployment.DeploymentId, deployment);
+            return updateResult.ModifiedCount;
+        }
+
         public async Task<long> DeleteDeploymentAsync(string name, string serverName, DateTime endDateTime)
         {
             var deploymentToDelete = await GetActiveDeployment(name, serverName);
@@ -80,7 +86,7 @@ namespace FileAuditManager.Data
             return 1;
         }
 
-        private async Task ChangeDeploymentEndDateTime(Guid deploymentId, DateTime endDateTime)
+        public async Task ChangeDeploymentEndDateTime(Guid deploymentId, DateTime endDateTime)
         {
             await collection.UpdateOneAsync(d => d.DeploymentId == deploymentId, Builders<Deployment>.Update.Set(d => d.EndDateTime, endDateTime));
         }

@@ -12,6 +12,7 @@ namespace FileAuditManager.Data
         Task<Deployment> GetDeploymentAsync(Guid deploymentId);
         Task InsertDeploymentAsync(Deployment deployment);
         Task<long> UpdateMostRecentAuditAsync(Guid deploymentId, Guid mostRecentDeploymentAuditId);
+        Task<long> ReplaceDeployment(Deployment deployment);
         Task<long> DeleteDeploymentAsync(string name, string serverName, DateTime endDateTime);
     }
 }
