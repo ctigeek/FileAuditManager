@@ -174,10 +174,14 @@ namespace FileAuditManager.Hashing
                 var sw = Stopwatch.StartNew();
                 await HashDirectory(deployment, fileExclusionExpressions, hashHiddenFiles, hashResults);
                 var hash = HashTheHashResults(hashResults);
-
-                if (deployment.Hash == Deployment.EmptyHash) deployment.Hash = hash;
-                if (deployment.FileHashes == null || deployment.FileHashes.Count == 0) deployment.FileHashes = hashResults;
-                if (hash != deployment.Hash)
+                
+                if (deployment.Hash == Deployment.EmptyHash)
+                {
+                    deployment.Hash = hash;
+                    deployment.FileHashes = hashResults;
+                }
+                bool validHash = deployment.Hash == hash;
+                if (!validHash)
                 {
                     hashDifferences = DetermineHashDifferences(deployment.FileHashes, hashResults);
                 }
@@ -186,9 +190,13 @@ namespace FileAuditManager.Hashing
                 {
                     DeploymentId = deployment.DeploymentId,
                     Hash = hash,
-                    ValidHash = deployment.Hash.Equals(hash, StringComparison.InvariantCultureIgnoreCase),
+                    ValidHash = validHash,
                     FileHashMismatches = hashDifferences
                 };
+                if (deployment.MostRecentAudit == Guid.Empty)
+                {
+                    deployment.MostRecentAudit = audit.DeploymentAuditId;
+                }
 
                 if (log.IsDebugEnabled)
                 {
