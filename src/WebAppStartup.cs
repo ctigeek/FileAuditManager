@@ -115,6 +115,7 @@ namespace FileAuditManager
         {
             var httpConfiguration = new HttpConfiguration();
             httpConfiguration.Services.Replace(typeof(IHttpControllerActivator), new FileAuditManagerHttpControllerActivator());
+            httpConfiguration.Services.Replace(typeof(IHttpControllerSelector), new FileAuditManagerControllerSelector(httpConfiguration));
 
             //------------------------------------------  Application
             httpConfiguration.Routes.MapHttpRoute(
@@ -157,6 +158,18 @@ namespace FileAuditManager
                 defaults: new
                 {
                     controller = "Audit"
+                },
+                constraints: new
+                {
+                    httpMethod = new HttpMethodConstraint(HttpMethod.Post)
+                });
+            httpConfiguration.Routes.MapHttpRoute(
+                name: "AddComment",
+                routeTemplate: "application/{name}/audit/{deploymentAuditId}/comments",
+                defaults: new
+                {
+                    controller = "Audit",
+                    action = "AddComment"
                 },
                 constraints: new
                 {

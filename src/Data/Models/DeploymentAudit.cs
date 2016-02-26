@@ -20,8 +20,14 @@ namespace FileAuditManager.Data.Models
         public string Error { get; set; } = string.Empty;
 
         public IList<FileHashMismatch> FileHashMismatches { get; set; } = new List<FileHashMismatch>();
-    }
 
+        public IList<AuditComment> Comments { get; set; } = new List<AuditComment>();
+    }
+    public class AuditComment
+    {
+        public string Name { get; set; }
+        public string Comment { get; set; }
+    }
     public class FileHashMismatch
     {
         public FileHash OriginalHash { get; set; }

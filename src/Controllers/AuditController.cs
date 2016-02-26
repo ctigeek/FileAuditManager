@@ -118,6 +118,40 @@ namespace FileAuditManager.Controllers
             }
         }
 
+        public async Task<IHttpActionResult> AddComment(string name, Guid deploymentAuditId, [FromBody] AuditComment auditComment)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(auditComment?.Comment))
+                {
+                    return BadRequest("The body is not valid. You must include a comment.");
+                }
+                var getAppTask = applicationRepository.GetApplicationAsync(name);
+                var getAuditTask = auditRepository.GetAuditsAsync(new[] {deploymentAuditId});
+                await Task.WhenAll(getAppTask, getAuditTask);
+                var application = getAppTask.Result;
+                var audit = getAuditTask.Result.FirstOrDefault();
+
+                if (application == null)
+                {
+                    return BadRequest("Unknown application name: `" + name + "`.");
+                }
+                if (audit == null)
+                {
+                    return BadRequest("Unknown application name: `" + name + "`.");
+                }
+                var newComments = new List<AuditComment>(audit.Comments);
+                newComments.Add(auditComment);
+                await auditRepository.UpdateCommentsAsync(audit.DeploymentAuditId, newComments);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error in audit controller:", ex);
+                return InternalServerError();
+            }
+        }
+
         private object BuildAuditResponseObject(string applicationName, IList<Deployment> deployments, IEnumerable<DeploymentAudit> deploymentAudits)
         {
             var audits = new List<object>();
@@ -137,7 +171,8 @@ namespace FileAuditManager.Controllers
                         AuditHash = deploymentAudit.Hash,
                         ValidHash = deploymentAudit.ValidHash,
                         Error = deploymentAudit.Error,
-                        HashErrors = deploymentAudit.FileHashMismatches
+                        FileHashMismatches = deploymentAudit.FileHashMismatches,
+                        Comments = deploymentAudit.Comments
                     });
                 }
             }

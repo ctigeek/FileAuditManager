@@ -10,5 +10,6 @@ namespace FileAuditManager.Data
         Task<IList<DeploymentAudit>> GetAuditsAsync(IList<Guid> deploymentAuditIds);
         Task<IList<DeploymentAudit>> GetAllAuditsAsync(IList<Guid> deploymentIds);
         Task CreateAuditAsync(DeploymentAudit deploymentAudit);
+        Task UpdateCommentsAsync(Guid deploymentAuditId, IList<AuditComment> comments);
     }
 }

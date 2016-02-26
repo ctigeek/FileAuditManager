@@ -38,9 +38,15 @@ namespace FileAuditManager.Data
 
         public async Task CreateAuditAsync(DeploymentAudit deploymentAudit)
         {
-            var updateDeploymentTask = deploymentRepository.UpdateMostRecentAudit(deploymentAudit.DeploymentId, deploymentAudit.DeploymentAuditId);
+            var updateDeploymentTask = deploymentRepository.UpdateMostRecentAuditAsync(deploymentAudit.DeploymentId, deploymentAudit.DeploymentAuditId);
             var insertAuditTask = collection.InsertOneAsync(deploymentAudit);
             await Task.WhenAll(updateDeploymentTask, insertAuditTask);
+        }
+
+        public async Task UpdateCommentsAsync(Guid deploymentAuditId, IList<AuditComment> comments)
+        {
+            await collection.UpdateOneAsync(d=>d.DeploymentAuditId == deploymentAuditId,
+                            Builders<DeploymentAudit>.Update.Set(d => d.Comments, comments));
         }
     }
 }
