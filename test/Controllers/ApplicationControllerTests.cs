@@ -14,7 +14,6 @@ namespace test.Controllers
     public class ApplicationControllerTests
     {
         private Mock<IApplicationRepository> applicationRepository;
-        private Mock<IDeploymentRepository> deploymentRepository;
         private ApplicationController applicationController;
 
         private Application existingApplication;
@@ -29,8 +28,7 @@ namespace test.Controllers
                 Enabled = true
             };
             applicationRepository = new Mock<IApplicationRepository>();
-            deploymentRepository = new Mock<IDeploymentRepository>();
-            applicationController = new ApplicationController(applicationRepository.Object, deploymentRepository.Object);
+            applicationController = new ApplicationController(applicationRepository.Object);
         }
 
         [Test]
