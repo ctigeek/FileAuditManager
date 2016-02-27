@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Dispatcher;
-using System.Web.Http.Routing;
 using FileAuditManager.Controllers;
 using log4net;
 using Owin;
 using FileAuditManager.Logging;
 using Microsoft.Owin;
-using HttpMethodConstraint = System.Web.Http.Routing.HttpMethodConstraint;
-using System.Collections.Generic;
 
 namespace FileAuditManager
 {
-    class WebAppStartup
+    public class WebAppStartup
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(WebAppStartup));
         public void Configuration(IAppBuilder appBuilder)
@@ -115,110 +109,8 @@ namespace FileAuditManager
 
         private void RunWebApiConfiguration(IAppBuilder appBuilder)
         {
-            var httpConfiguration = new HttpConfiguration();
-            httpConfiguration.Services.Replace(typeof(IHttpControllerActivator), new FileAuditManagerHttpControllerActivator());
-            
-            //------------------------------------------  Application
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "Application",
-                routeTemplate: "application/{name}",
-                defaults: new
-                {
-                    name = RouteParameter.Optional,
-                    controller = "Application"
-                },
-                constraints: new
-                {
-                    url = new LowercaseRouteConstraint()
-                });
-            //------------------------------------------  Deployment
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "DeploymentCreateDelete",
-                routeTemplate: "application/{name}/deployment/{serverName}",
-                defaults: new
-                {
-                    controller = "Deployment"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post, HttpMethod.Delete),
-                    url = new LowercaseRouteConstraint()
-                });
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "DeploymentGet",
-                routeTemplate: "application/{name}/deployment/{serverName}",
-                defaults: new
-                {
-                    serverName = RouteParameter.Optional,
-                    controller = "Deployment"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Get),
-                    url = new LowercaseRouteConstraint()
-                });
-            //-----------------------------------------Audit
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "AuditPost",
-                routeTemplate: "application/{name}/audit/{serverName}",
-                defaults: new
-                {
-                    controller = "Audit"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post),
-                    url = new LowercaseRouteConstraint()
-                });
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "AddComment",
-                routeTemplate: "application/{name}/audit/{deploymentAuditId}/comments",
-                defaults: new
-                {
-                    controller = "Audit",
-                    action = "AddComment"
-                },
-                constraints: new
-                {
-                    httpMethod = new HttpMethodConstraint(HttpMethod.Post),
-                    url = new LowercaseRouteConstraint()
-                });
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "Audit",
-                routeTemplate: "application/{name}/audit/{serverName}",
-                defaults: new
-                {
-                    serverName = RouteParameter.Optional,
-                    controller = "Audit"
-                }, 
-                constraints: new
-                {
-                    url = new LowercaseRouteConstraint()
-                });
-            // --------------------------------------- Health
-            httpConfiguration.Routes.MapHttpRoute(
-                name: "Health",
-                routeTemplate: "{controller}",
-                defaults: new
-                {
-                    controller = "Health"
-                },
-                constraints: new
-                {
-                    url = new LowercaseRouteConstraint()
-                });
-
-            appBuilder.UseWebApi(httpConfiguration);
+            appBuilder.UseWebApi(new ApiHttpConfiguration());
             Log.Debug("Registered WebApi route configuration.");
-        }
-    }
-
-    public class LowercaseRouteConstraint : IHttpRouteConstraint
-    {
-        public bool Match(HttpRequestMessage request, IHttpRoute route, string parameterName, IDictionary<string, object> values, HttpRouteDirection routeDirection)
-        {
-            var path = request.RequestUri.AbsolutePath;
-            return path.Equals(path.ToLowerInvariant(), StringComparison.InvariantCulture);
         }
     }
 }
