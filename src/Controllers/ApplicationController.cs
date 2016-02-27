@@ -13,12 +13,10 @@ namespace FileAuditManager.Controllers
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(ApplicationController));
         private readonly IApplicationRepository applicationRepository;
-        private readonly IDeploymentRepository deploymentRepository;
 
-        public ApplicationController(IApplicationRepository applicationRepository, IDeploymentRepository deploymentRepository)
+        public ApplicationController(IApplicationRepository applicationRepository)
         {
             this.applicationRepository = applicationRepository;
-            this.deploymentRepository = deploymentRepository;
         }
 
         public async Task<IHttpActionResult> Get([FromUri]bool activeOnly = true)
