@@ -14,6 +14,7 @@ namespace test.Controllers
     public class ApplicationControllerTests
     {
         private Mock<IApplicationRepository> applicationRepository;
+        private Mock<IDeploymentRepository> deploymentRepository;
         private ApplicationController applicationController;
 
         private Application existingApplication;
@@ -28,7 +29,8 @@ namespace test.Controllers
                 Enabled = true
             };
             applicationRepository = new Mock<IApplicationRepository>();
-            applicationController = new ApplicationController(applicationRepository.Object);
+            deploymentRepository = new Mock<IDeploymentRepository>();
+            applicationController = new ApplicationController(applicationRepository.Object, deploymentRepository.Object);
         }
 
         [Test]
@@ -58,7 +60,7 @@ namespace test.Controllers
         {
             Application savedApplication = null;
             applicationRepository.Setup(a => a.GetApplicationAsync(existingApplication.Name)).ReturnsAsync(existingApplication);
-            applicationRepository.Setup(a => a.UpdateApplication(It.IsAny<Application>()))
+            applicationRepository.Setup(a => a.ReplaceApplication(It.IsAny<Application>()))
                 .Callback((Application app) => { savedApplication = app; })
                 .Returns(Task.CompletedTask);
 
