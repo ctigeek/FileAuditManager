@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using FileAuditManager.Controllers;
+using FileAuditManager.Controllers.Registration;
+using FileAuditManager.Controllers.Validation;
 using log4net;
 using Owin;
 using FileAuditManager.Logging;
-using Microsoft.Owin;
 
 namespace FileAuditManager
 {
@@ -77,34 +75,7 @@ namespace FileAuditManager
 
         private void AddBaseValidation(IAppBuilder appBuilder)
         {
-            appBuilder.Use(async (env, next) =>
-            {
-                try
-                {
-                    if ((env.Request.Method == "PUT" || env.Request.Method == "POST") &&
-                        !env.Request.ContentType.Equals("application/json", StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        await WriteBadrequestResponse("Content-Type for POST and PUT must be application/json.", env.Response);
-                    }
-                    else
-                    {
-                        await next();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Unknown error in OWIN pipeline.", ex);
-                }
-            });
-        }
-
-        private async Task WriteBadrequestResponse(string message, IOwinResponse response) 
-        {
-            var bytes = Encoding.UTF8.GetBytes(message);
-            response.StatusCode = 400;
-            response.ContentType = "plain/text";
-            response.ContentLength = bytes.Length;
-            await response.WriteAsync(bytes);
+            appBuilder.UseRequestValidator();
         }
 
         private void RunWebApiConfiguration(IAppBuilder appBuilder)

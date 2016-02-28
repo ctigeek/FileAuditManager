@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Web.Http.Routing;
 
-namespace FileAuditManager.Controllers
+namespace FileAuditManager.Controllers.Registration
 {
     public class LowercaseRouteConstraint : IHttpRouteConstraint
     {

@@ -6,6 +6,7 @@ using System.Web.Http.Dispatcher;
 using System.Web.Http.Hosting;
 using System.Web.Http.Routing;
 using FileAuditManager.Controllers;
+using FileAuditManager.Controllers.Registration;
 using NUnit.Framework;
 
 namespace test.Controllers

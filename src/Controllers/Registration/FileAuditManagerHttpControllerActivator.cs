@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Dispatcher;
 
-namespace FileAuditManager.Controllers
+namespace FileAuditManager.Controllers.Registration
 {
     class FileAuditManagerHttpControllerActivator : IHttpControllerActivator
     {

@@ -62,7 +62,6 @@ namespace test.Controllers
                 .Callback((Application app) => { savedApplication = app; })
                 .Returns(Task.CompletedTask);
 
-            
             var result = await applicationController.Put(existingApplication.Name, new ModifiedApplication
             {
                 Enabled = false
