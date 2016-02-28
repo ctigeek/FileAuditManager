@@ -23,6 +23,10 @@ namespace FileAuditManager
             this.ForConcreteType<ApplicationController>();
             this.ForConcreteType<DeploymentController>();
             this.ForConcreteType<AuditController>();
+            HealthController.ContentType = Configuration.HealthResponseContentType;
+            HealthController.ResponseFormat = Configuration.HealthResponseFormatString;
+            HealthController.UpStatusString = Configuration.HealthResponseUpStatusString;
+            HealthController.DownStatusString = Configuration.HealthResponseDownStatusString;
             this.ForConcreteType<HealthController>();
         }
     }

@@ -33,10 +33,10 @@ namespace FileAuditManager
             this.applicationRepository = applicationRepository ?? DIContainer.Container.GetInstance<IApplicationRepository>();
             this.mailService = mailService ?? DIContainer.Container.GetInstance<IMailService>();
 
-            var milliseconds = Configuration.AuditTimerInMilliseconds;
-            if (milliseconds > 59999)
+            var seconds = Configuration.AuditTimerInSeconds;
+            if (seconds > 59)
             {
-                timer = new Timer(milliseconds);
+                timer = new Timer(seconds * 1000);
                 timer.Elapsed += Timer_Elapsed;
             }
         }

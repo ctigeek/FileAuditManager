@@ -15,8 +15,8 @@ namespace FileAuditManager
         public static readonly bool UseWindowsAuth = ConfigurationManager.AppSettings["UseWindowsAuth"] != null &&
                                                   ConfigurationManager.AppSettings["UseWindowsAuth"].Equals("true", StringComparison.InvariantCultureIgnoreCase);
 
-        public static readonly long AuditTimerInMilliseconds = ConfigurationManager.AppSettings["AuditTimerInMilliseconds"] != null
-            ? long.Parse(ConfigurationManager.AppSettings["AuditTimerInMilliseconds"])
+        public static readonly long AuditTimerInSeconds = ConfigurationManager.AppSettings["AuditTimerInSeconds"] != null
+            ? long.Parse(ConfigurationManager.AppSettings["AuditTimerInSeconds"])
             : 0;
 
         public static readonly bool SendMailOnAuditFailure = ConfigurationManager.AppSettings["SendMailOnAuditFailure"] != null &&
@@ -29,6 +29,11 @@ namespace FileAuditManager
         public static readonly string AuditEmailToAddress = ConfigurationManager.AppSettings["AuditEmailToAddress"] ?? string.Empty;
 
         public static readonly string AuditEmailFromAddress = ConfigurationManager.AppSettings["AuditEmailFromAddress"] ?? string.Empty;
+
+        public static readonly string HealthResponseContentType = ConfigurationManager.AppSettings["HealthResponseContentType"] ?? "text.plain";
+        public static readonly string HealthResponseFormatString = ConfigurationManager.AppSettings["HealthResponseFormatString"] ?? "<%=status%>";
+        public static readonly string HealthResponseUpStatusString = ConfigurationManager.AppSettings["HealthResponseUpStatusString"] ?? "Up";
+        public static readonly string HealthResponseDownStatusString = ConfigurationManager.AppSettings["HealthResponseDownStatusString"] ?? "OOR";
 
         public static void ValidateConnectionStrings()
         {
