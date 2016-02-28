@@ -6,14 +6,14 @@ using Microsoft.Owin;
 
 namespace FileAuditManager.Logging
 {
-    internal static class ApiRequestLogger
+    internal class ApiRequestLogger
     {
         public const string RequestLogName = "RequestLog";
         internal static ILog RequestLog { get; set; } = LogManager.GetLogger(RequestLogName);
-        private static readonly string ComputerName = Environment.MachineName;
-        private static readonly string ApplicationName = ConfigurationManager.AppSettings["ApplicationName"] ?? Path.GetFileNameWithoutExtension(typeof (ApiRequestLogger).Assembly.Location);
+        private readonly string ComputerName = Environment.MachineName;
+        private readonly string ApplicationName = ConfigurationManager.AppSettings["ApplicationName"] ?? Path.GetFileNameWithoutExtension(typeof (ApiRequestLogger).Assembly.Location);
 
-        public static void LogComment(string message)
+        public void LogComment(string message)
         {
             if (!string.IsNullOrEmpty(message))
             {
@@ -21,7 +21,7 @@ namespace FileAuditManager.Logging
             }
         }
 
-        public static void Log(IOwinRequest request, IOwinResponse response, long responseTime)
+        public void Log(IOwinRequest request, IOwinResponse response, long responseTime)
         {
             var username = (string.IsNullOrEmpty(request.User?.Identity?.Name)) ? "-" : request.User.Identity.Name;
             var queryString = string.IsNullOrEmpty(request.QueryString.Value) ? "-" : request.QueryString.Value;

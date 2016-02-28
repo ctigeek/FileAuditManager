@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using FileAuditManager.Controllers.Registration;
 using FileAuditManager.Controllers.Validation;
 using log4net;
@@ -23,24 +21,7 @@ namespace FileAuditManager
 
         private void AddRequestLogging(IAppBuilder appBuilder)
         {
-            ILog requestLog = LogManager.GetLogger(ApiRequestLogger.RequestLogName);
-            if (requestLog.IsWarnEnabled)
-            {
-                appBuilder.Use(async (env, next) =>
-                {
-                    try
-                    {
-                        var stopwatch = Stopwatch.StartNew();
-                        await next();
-                        stopwatch.Stop();
-                        ApiRequestLogger.Log(env.Request, env.Response, stopwatch.ElapsedMilliseconds);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Exception while writing to request log.", ex);
-                    }
-                });
-            }
+            appBuilder.UseRequestLogging();
         }
 
         private void AddWindowsAuth(IAppBuilder appBuilder)
@@ -56,19 +37,7 @@ namespace FileAuditManager
         {
             if (Log.IsDebugEnabled)
             {
-                appBuilder.Use(async (env, next) =>
-                {
-                    try
-                    {
-                        Log.DebugFormat("Http method: {0}, path {1}", env.Request.Method, env.Request.Path);
-                        await next();
-                        Log.DebugFormat("Response code: {0}", env.Response.StatusCode);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Unknown error in OWIN pipeline.", ex);
-                    }
-                });
+                appBuilder.UseConsoleLogging();
                 Log.Debug("Http request/response debug output enabled.");
             }
         }

@@ -101,6 +101,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbstractHandler.cs" />
     <Compile Include="AuditManager.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Controllers\Registration\ApiHttpConfiguration.cs" />
@@ -123,6 +124,7 @@
     <Compile Include="Data\Models\DeploymentAudit.cs" />
     <Compile Include="Data\MongoRepositoryBase.cs" />
     <Compile Include="Hashing\IApplicationHashingService.cs" />
+    <Compile Include="Logging\RequestLoggingHandler.cs" />
     <Compile Include="Mail\IMailService.cs" />
     <Compile Include="Mail\MailService.cs" />
     <Compile Include="StructureMapRegistry.cs" />

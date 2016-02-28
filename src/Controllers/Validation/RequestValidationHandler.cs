@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.Threading.Tasks;
 using log4net;
 using Microsoft.Owin;
@@ -7,20 +6,11 @@ using Owin;
 
 namespace FileAuditManager.Controllers.Validation
 {
-    public static class RequestValidationHandler
+    public class RequestValidationHandler : AbstractHandler
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof (RequestValidationHandler));
 
-        public static IAppBuilder UseRequestValidator(this IAppBuilder appBuilder)
-        {
-            appBuilder.Use(async (env, next) =>
-            {
-                await ValidateUrl(env, next);
-            });
-            return appBuilder;
-        }
-
-        public static async Task ValidateUrl(IOwinContext env, Func<Task> next)
+        public async Task ValidateUrl(IOwinContext env, Func<Task> next)
         {
             try
             {
@@ -42,16 +32,21 @@ namespace FileAuditManager.Controllers.Validation
             catch (Exception ex)
             {
                 Log.Error("Unknown error in OWIN pipeline.", ex);
+                WriteServerError("Unknown error.", env.Response, Log);
             }
         }
+    }
 
-        private static async Task WriteBadrequestResponse(string message, IOwinResponse response)
+    public static class RequestValidationHandlerHelper
+    {
+        public static IAppBuilder UseRequestValidator(this IAppBuilder appBuilder)
         {
-            var bytes = Encoding.UTF8.GetBytes(message);
-            response.StatusCode = 400;
-            response.ContentType = "plain/text";
-            response.ContentLength = bytes.Length;
-            await response.WriteAsync(bytes);
+            var requestValidationHandler = new RequestValidationHandler();
+            appBuilder.Use(async (env, next) =>
+            {
+                await requestValidationHandler.ValidateUrl(env, next);
+            });
+            return appBuilder;
         }
     }
 }
