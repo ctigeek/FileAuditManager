@@ -13,15 +13,10 @@ namespace FileAuditManager
         public void Configuration(IAppBuilder appBuilder)
         {
             AddWindowsAuth(appBuilder);
-            AddRequestLogging(appBuilder);
-            AddConsoleLogging(appBuilder);
-            AddBaseValidation(appBuilder);
-            RunWebApiConfiguration(appBuilder);
-        }
-
-        private void AddRequestLogging(IAppBuilder appBuilder)
-        {
             appBuilder.UseRequestLogging();
+            AddConsoleLogging(appBuilder);
+            appBuilder.UseRequestValidator();
+            appBuilder.UseWebApi(new ApiHttpConfiguration());
         }
 
         private void AddWindowsAuth(IAppBuilder appBuilder)
@@ -40,17 +35,6 @@ namespace FileAuditManager
                 appBuilder.UseConsoleLogging();
                 Log.Debug("Http request/response debug output enabled.");
             }
-        }
-
-        private void AddBaseValidation(IAppBuilder appBuilder)
-        {
-            appBuilder.UseRequestValidator();
-        }
-
-        private void RunWebApiConfiguration(IAppBuilder appBuilder)
-        {
-            appBuilder.UseWebApi(new ApiHttpConfiguration());
-            Log.Debug("Registered WebApi route configuration.");
         }
     }
 }
