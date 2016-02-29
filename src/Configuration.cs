@@ -30,8 +30,9 @@ namespace FileAuditManager
 
         public static readonly string AuditEmailFromAddress = ConfigurationManager.AppSettings["AuditEmailFromAddress"] ?? string.Empty;
 
+        public static readonly string HealthControllerPath = ConfigurationManager.AppSettings["HealthControllerPath"] ?? "health";
         public static readonly string HealthResponseContentType = ConfigurationManager.AppSettings["HealthResponseContentType"] ?? "text.plain";
-        public static readonly string HealthResponseFormatString = ConfigurationManager.AppSettings["HealthResponseFormatString"] ?? "<%=status%>";
+        public static readonly string HealthResponseFormatString = Uri.UnescapeDataString(ConfigurationManager.AppSettings["HealthResponseFormatString"] ?? "<%=status%>");
         public static readonly string HealthResponseUpStatusString = ConfigurationManager.AppSettings["HealthResponseUpStatusString"] ?? "Up";
         public static readonly string HealthResponseDownStatusString = ConfigurationManager.AppSettings["HealthResponseDownStatusString"] ?? "OOR";
 

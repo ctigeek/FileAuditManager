@@ -101,7 +101,7 @@ namespace FileAuditManager.Controllers.Registration
         {
             Routes.MapHttpRoute(
                 name: "Health",
-                routeTemplate: "{controller}",
+                routeTemplate: Configuration.HealthControllerPath,
                 defaults: new
                 {
                     controller = "Health"
